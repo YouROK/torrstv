@@ -1,7 +1,9 @@
 name: Flutter Desktop Build and Release
 
-#on:
-#  push:
+on:
+  push:
+    branches:
+      - master
 #    tags:
 #      - '**'
 
