@@ -22,7 +22,10 @@ Future<HttpResponse> httpGet(String url, String? auth, {Map<String, String>? hea
   final uri = Uri.parse(url);
   final Map<String, String> finalHeaders = {...(headers ?? {})};
 
-  if (auth != null && auth.isNotEmpty) finalHeaders['Authorization'] = 'Basic $auth';
+  if (auth != null && auth.isNotEmpty) {
+    final b64auth = base64.encode(utf8.encode(auth));
+    finalHeaders['Authorization'] = 'Basic $b64auth';
+  }
 
   try {
     final response = await http.get(uri, headers: finalHeaders);
@@ -41,7 +44,10 @@ Future<HttpResponse> httpPost(String url, String? auth, {required Map<String, dy
   final uri = Uri.parse(url);
   final finalHeaders = {'Content-Type': 'application/json; charset=UTF-8', ...(headers ?? {})};
 
-  if (auth != null && auth.isNotEmpty) finalHeaders['Authorization'] = 'Basic $auth';
+  if (auth != null && auth.isNotEmpty) {
+    final b64auth = base64.encode(utf8.encode(auth));
+    finalHeaders['Authorization'] = 'Basic $b64auth';
+  }
 
   try {
     final response = await http.post(uri, headers: finalHeaders, body: json.encode(body));
