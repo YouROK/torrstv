@@ -4,7 +4,6 @@ name: Flutter Desktop Build and Release
 #  push:
 #    tags:
 #      - '**'
-#
 
 jobs:
   build_windows:
@@ -102,5 +101,5 @@ jobs:
           draft: true
           files:
             artifacts/**/*
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
