@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:torrstv/core/constants/app_constants.dart';
+import 'package:torrstv/core/constants/app_info.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/services/torrserver/ts.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
@@ -156,11 +156,17 @@ class SettingsPage extends ConsumerWidget {
               const SizedBox(height: 16),
 
               Center(
-                child: Text(
-                  'TorrsTV ${AppConstants.appVersion}',
-                  style: TextStyle(color: colorScheme.primary),
-                  textAlign: TextAlign.center,
-                ),
+                child: ref
+                    .watch(appVersionProvider)
+                    .when(
+                      data: (version) => Text(
+                        'TorrsTV $version',
+                        style: TextStyle(color: colorScheme.primary),
+                        textAlign: TextAlign.center,
+                      ),
+                      loading: () => const Text('TorrsTV Loading...'),
+                      error: (error, stack) => Text('TorrsTV Error: $error'),
+                    ),
               ),
             ],
           ),

@@ -109,9 +109,9 @@ class TorrentInfoPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow('Размер', bytesFmt(info['torrent_size']) ?? 'Неизвестно'),
+                      _buildInfoRow('Размер', bytesFmt(info['torrent_size'] ?? 0)),
                       _buildInfoRow('Статус', info['stat_string'] ?? 'Неизвестно'),
-                      _buildInfoRow('Раздающие', '${info['connected_seeders'] ?? 0} · ${info['pending_peers'] ?? 0} / ${info['total_peers']}'),
+                      _buildInfoRow('Раздающие', '${info['connected_seeders'] ?? 0} · ${info['pending_peers'] ?? 0} / ${info['total_peers'] ?? 0}'),
                       _buildInfoRow('Скорость', speedFmt(info['download_speed'] ?? 0)),
 
                       if (info['stat'] == 2 && info['preload_size'] != null && info['preloaded_bytes'] != null) ...[
