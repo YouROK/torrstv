@@ -86,6 +86,8 @@ jobs:
     name: Create GitHub Release
     needs: [ build_windows, build_linux, build_macos ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Download all artifacts
