@@ -51,7 +51,9 @@ jobs:
         run: flutter build linux --release
 
       - name: Zip Linux build
-        run: zip -r linux-release-${{ github.ref_name }}.zip build/linux/x64/release/bundle/*
+        run: |
+          cd build/linux/x64/release/bundle/
+          zip -r ../../../../linux-release-${{ github.ref_name }}.zip ./*
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
@@ -74,7 +76,9 @@ jobs:
         run: flutter build macos --release
 
       - name: Zip macOS build
-        run: zip -r macos-release-${{ github.ref_name }}.zip build/macos/Build/Products/Release/*.app
+        run: |
+          cd build/macos/Build/Products/Release/
+          zip -r ../../../../macos-release-${{ github.ref_name }}.zip *.app
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
@@ -100,7 +104,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           name: Release ${{ github.ref_name }}
-          draft: true
+          draft: false
           files:
             artifacts/**/*
         env:
