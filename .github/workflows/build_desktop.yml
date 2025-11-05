@@ -6,9 +6,6 @@ name: Flutter Desktop Build and Release
 #      - '**'
 
 jobs:
-  # ==================================
-  # 1. Сборка для Windows
-  # ==================================
   build_windows:
     runs-on: windows-latest
     steps:
@@ -23,7 +20,6 @@ jobs:
       - name: Build Windows Release
         run: flutter build windows --release
 
-      # Шаг 1: Упаковка и загрузка артефакта
       - name: Zip Windows build
         run: |
           Compress-Archive -Path "build\windows\runner\Release\*" -DestinationPath "windows-release-${{ github.ref_name }}.zip"
@@ -35,9 +31,6 @@ jobs:
           name: windows-release
           path: windows-release-${{ github.ref_name }}.zip
 
-  # ==================================
-  # 2. Сборка для Linux
-  # ==================================
   build_linux:
     runs-on: ubuntu-latest
     steps:
@@ -57,7 +50,6 @@ jobs:
       - name: Build Linux Release
         run: flutter build linux --release
 
-      # Шаг 1: Упаковка и загрузка артефакта
       - name: Zip Linux build
         run: zip -r linux-release-${{ github.ref_name }}.zip build/linux/x64/release/bundle/*
 
@@ -67,9 +59,6 @@ jobs:
           name: linux-release
           path: linux-release-${{ github.ref_name }}.zip
 
-  # ==================================
-  # 3. Сборка для macOS
-  # ==================================
   build_macos:
     runs-on: macos-latest
     steps:
@@ -84,7 +73,6 @@ jobs:
       - name: Build macOS Release
         run: flutter build macos --release
 
-      # Шаг 1: Упаковка и загрузка артефакта
       - name: Zip macOS build
         run: zip -r macos-release-${{ github.ref_name }}.zip build/macos/Build/Products/Release/*.app
 
@@ -94,34 +82,24 @@ jobs:
           name: macos-release
           path: macos-release-${{ github.ref_name }}.zip
 
-  # ==================================
-  # 4. Релиз (зависит от успешной сборки всех платформ)
-  # ==================================
   release:
     name: Create GitHub Release
-    # Запускать эту работу только после успешного выполнения всех сборок
     needs: [ build_windows, build_linux, build_macos ]
     runs-on: ubuntu-latest
 
     steps:
-      # Шаг 2: Загрузка всех артефактов из предыдущих работ
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      # Шаг 3: Создание релиза и прикрепление файлов
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          # Тег берется из триггера (например, v1.0.0)
           tag_name: ${{ github.ref }}
-          # Имя релиза
           name: Release ${{ github.ref_name }}
-          # Создать как черновик (Draft), чтобы вы могли его проверить перед публикацией
           draft: true
-          # Все файлы из папки artifacts будут прикреплены к релизу
           files:
-            artifacts/**/* env:
-          # Для авторизации при создании релиза
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            artifacts/**/*
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
