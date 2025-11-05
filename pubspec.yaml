@@ -1,0 +1,36 @@
+name: torrstv
+description: "All movies in one app"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^3.0.3
+  http: ^1.5.0
+  go_router: ^16.3.0
+  shared_preferences: ^2.5.3
+  intl: ^0.20.2
+  path: ^1.9.1
+  file_picker: ^10.3.3
+  flutter_cache_manager: ^3.4.1
+  flutter_svg: ^2.2.2
+  url_launcher: ^6.3.2
+  media_kit: ^1.2.1
+  media_kit_video: ^1.3.1
+  media_kit_libs_video: ^1.0.7
+  media_kit_libs_audio: ^1.0.7
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
