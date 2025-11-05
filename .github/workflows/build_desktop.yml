@@ -24,7 +24,7 @@ jobs:
 
       - name: Zip Windows build
         run: |
-          Compress-Archive -Path "build\windows\runner\Release\*" -DestinationPath "windows-release-${{ github.ref_name }}.zip"
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "windows-release-${{ github.ref_name }}.zip"
         shell: powershell
 
       - name: Upload Windows artifact
