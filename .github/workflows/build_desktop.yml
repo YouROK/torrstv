@@ -2,10 +2,8 @@ name: Flutter Desktop Build and Release
 
 on:
   push:
-    branches:
-      - master
-#    tags:
-#      - '**'
+    tags:
+      - '**'
 
 jobs:
   build_windows:
