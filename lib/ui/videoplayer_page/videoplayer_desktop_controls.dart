@@ -142,9 +142,7 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
             right: 0,
             bottom: 100,
             top: 0,
-            child: Expanded(
-              child: GestureDetector(onTap: _onVideoTap, behavior: HitTestBehavior.opaque),
-            ),
+            child: GestureDetector(onTap: _onVideoTap, behavior: HitTestBehavior.opaque),
           ),
           Positioned(
             left: 0,
