@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
 
@@ -11,19 +12,21 @@ final torrServerServiceProvider = Provider.autoDispose<TorrServerService>((ref) 
   return TorrServerService(ref);
 });
 
-String getTSPath() {
-  final appExecutablePath = Platform.resolvedExecutable;
-  final executableDir = path.dirname(appExecutablePath);
+Future<String> getTSPath() async {
+  var tsPath = "";
+  final Directory dir = await getApplicationCacheDirectory();
+  tsPath = dir.path;
+
   var filename = "TorrServer";
   if (Platform.isWindows) {
     filename += ".exe";
   }
-  final filePath = path.join(executableDir, filename);
+  final filePath = path.join(tsPath, filename);
   return filePath;
 }
 
 Future<bool> isExistsTS() async {
-  final file = File(getTSPath());
+  final file = File(await getTSPath());
   return await file.exists();
 }
 
@@ -60,7 +63,8 @@ class TorrServerService {
     }
 
     try {
-      await Process.start(getTSPath(), [], mode: ProcessStartMode.detached);
+      final wrkdir = path.dirname(await getTSPath());
+      await Process.start(await getTSPath(), [], workingDirectory: wrkdir, mode: ProcessStartMode.detached);
       await Future.delayed(Duration(seconds: 1));
       final afterStartVer = await _ref.read(torrServerApiProvider).echo().timeout(Duration(seconds: 5));
       _link?.close();
