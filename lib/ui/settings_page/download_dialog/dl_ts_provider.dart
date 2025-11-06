@@ -103,7 +103,7 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
         throw Exception('Error connect to host: ${response.statusCode}');
       }
 
-      final filePath = getTSPath();
+      final filePath = await getTSPath();
       final file = File(filePath);
       final sink = file.openWrite();
 
