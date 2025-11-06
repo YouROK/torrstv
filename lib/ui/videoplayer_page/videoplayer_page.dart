@@ -5,15 +5,21 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/settings/settings.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
+import 'package:torrstv/ui/videoplayer_page/videoplayer_desktop_controls.dart';
 
 class InternalVideoPlayer extends ConsumerStatefulWidget {
   final dynamic torrent;
   final dynamic file;
 
-  const InternalVideoPlayer({super.key, required this.torrent, required this.file});
+  const InternalVideoPlayer({
+    super.key,
+    required this.torrent,
+    required this.file,
+  });
 
   @override
-  ConsumerState<InternalVideoPlayer> createState() => _InternalVideoPlayerState();
+  ConsumerState<InternalVideoPlayer> createState() =>
+      _InternalVideoPlayerState();
 }
 
 class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
@@ -41,14 +47,20 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
 
     final tsUrl = ref.read(torrServerApiProvider).getTSUrl();
 
-    final futures = (widget.torrent['file_stats'] as List).map<Future<Media>>((f) async {
+    final futures = (widget.torrent['file_stats'] as List).map<Future<Media>>((
+      f,
+    ) async {
       final pos = await sets.loadPosition(widget.torrent['hash'], f['id']);
-      return Media('$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${f['id']}&play', start: Duration(seconds: pos));
+      return Media(
+        '$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${f['id']}&play',
+        start: Duration(seconds: pos),
+      );
     }).toList();
 
     final List<Media> listMedia = await Future.wait(futures);
 
-    final mediaUrl = '$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${file['id']}&play';
+    final mediaUrl =
+        '$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${file['id']}&play';
     final index = listMedia.indexWhere((m) => m.uri == mediaUrl);
     final savedPosition = listMedia[index].start;
     final playable = Playlist(listMedia, index: index >= 0 ? index : 0);
@@ -71,7 +83,9 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
         final indexMatch = RegExp(r'index=(\d+)').firstMatch(uri);
         if (indexMatch != null) {
           final currentFileId = int.parse(indexMatch.group(1)!);
-          final currentFile = widget.torrent['file_stats'].firstWhere((f) => f['id'] == currentFileId);
+          final currentFile = widget.torrent['file_stats'].firstWhere(
+            (f) => f['id'] == currentFileId,
+          );
           file = currentFile;
           sets.setViewing(widget.torrent['hash'], file['id'], true);
         }
@@ -122,13 +136,38 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
+          // Основное видео на весь экран
+          Positioned.fill(
             child: Container(
               color: Colors.black,
-              child: Video(controller: controller, controls: MaterialDesktopVideoControls),
+              child: Video(
+                controller: controller,
+                controls: (state) => VideoPlayerDesktopControls(state: state),
+              ),
+            ),
+          ),
+
+          // Кнопка назад в левом верхнем углу
+          Positioned(
+            top: 16,
+            left: 16,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
             ),
           ),
         ],
