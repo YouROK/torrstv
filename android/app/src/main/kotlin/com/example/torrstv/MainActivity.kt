@@ -1,4 +1,4 @@
-package com.example.torrstv
+package ru.yourok.torrstv
 
 import io.flutter.embedding.android.FlutterActivity
 
