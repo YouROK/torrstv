@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
@@ -75,23 +74,6 @@ class _AddPageState extends ConsumerState<AddPage> {
         _isSearchingPosters = false;
       });
     }
-  }
-
-  Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['torrent']);
-
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _selectedFilePath = result.files.single.path!;
-      });
-    }
-  }
-
-  void _clearFile() {
-    setState(() {
-      _selectedFilePath = null;
-      _magnetController.clear();
-    });
   }
 
   void _selectPoster(String url) {
