@@ -201,7 +201,7 @@ class TorrentInfoPage extends ConsumerWidget {
       files.addAll(info['file_stats']);
     }
 
-    return files.where((file) => Mime.getMimeType(file['path']) != "*/*").toList();
+    return files.where((file) => Mime.getMimeType(file['path']) == "video/*").toList();
   }
 
   Widget _buildFileItem(BuildContext context, dynamic info, dynamic file, WidgetRef ref) {
