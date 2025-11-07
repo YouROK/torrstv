@@ -122,11 +122,15 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
       if (mounted) {
         setState(() {
           _showPlayPauseAnimation = false;
+          final isPlaying = widget.state.widget.controller.player.state.playing;
+          if (isPlaying) {
+            _hideControls();
+          } else {
+            _showControls();
+          }
         });
       }
     });
-
-    _showControls();
   }
 
   @override
@@ -141,7 +145,7 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
             left: 0,
             right: 0,
             bottom: 100,
-            top: 0,
+            top: 60,
             child: GestureDetector(onTap: _onVideoTap, behavior: HitTestBehavior.opaque),
           ),
           Positioned(
@@ -182,19 +186,25 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
   }
 
   Widget _buildControls() {
-    return Column(
-      children: [
-        const Expanded(child: SizedBox()),
-        MaterialDesktopSeekBar(
-          onSeekStart: () {
-            _timer?.cancel();
-          },
-          onSeekEnd: () {
-            _showControls();
-          },
-        ),
-        _buildMiddleBar(),
-      ],
+    return DecoratedBox(
+      // Используем DecoratedBox для применения градиента
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black45, Colors.black87, Colors.black], stops: [0.0, 0.2, 0.7, 1.0]),
+      ),
+      child: Column(
+        children: [
+          const Expanded(child: SizedBox()),
+          MaterialDesktopSeekBar(
+            onSeekStart: () {
+              _timer?.cancel();
+            },
+            onSeekEnd: () {
+              _showControls();
+            },
+          ),
+          _buildMiddleBar(),
+        ],
+      ),
     );
   }
 
@@ -226,6 +236,19 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
     );
   }
 
+  String _getChannels(int channelsCount) {
+    var ch = "";
+
+    if (channelsCount == 1) {
+      ch = "mono";
+    } else if (channelsCount == 2) {
+      ch = "stereo";
+    } else if (channelsCount > 0) {
+      ch = "${channelsCount - 1}.1";
+    }
+    return ch;
+  }
+
   Widget _buildAudioTracksOverlay() {
     final audioTracks = widget.state.widget.controller.player.state.tracks.audio;
     final currentAudio = widget.state.widget.controller.player.state.track.audio;
@@ -234,80 +257,95 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
       return const SizedBox();
     }
 
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Positioned(
       right: 16,
       bottom: 100,
-      child: Container(
-        width: 220, // Увеличил ширину для кодека
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white24),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Заголовок
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white24)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.audiotrack, size: 16, color: Colors.white70),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Аудиодорожки',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ),
-            ...audioTracks.map((track) {
-              final isSelected = track.id == currentAudio.id;
-              return Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _setAudioTrack(track),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue.withOpacity(0.3) : Colors.transparent,
-                      border: Border(bottom: BorderSide(color: Colors.white12)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.7),
+        child: Container(
+          width: 220,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Заголовок
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.white24)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.audiotrack, size: 16, color: Colors.white70),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Аудиодорожки',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, size: 16, color: isSelected ? Colors.blue : Colors.white54),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                track.id == 'no' ? 'Отключить' : track.title ?? 'Аудио ${track.id}',
-                                style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...audioTracks.map((track) {
+                        final isSelected = track.id == currentAudio.id;
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _setAudioTrack(track),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.blue.withOpacity(0.3) : Colors.transparent,
+                                border: Border(bottom: BorderSide(color: Colors.white12)),
                               ),
-                              if (track.codec != null && track.codec!.isNotEmpty) Text(track.codec!, style: TextStyle(color: Colors.white70, fontSize: 10)),
-                            ],
+                              child: Row(
+                                children: [
+                                  Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, size: 16, color: isSelected ? Colors.blue : Colors.white54),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(track.id == 'no' ? 'Отключить' : track.title ?? 'Аудио ${track.id}', style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13)),
+                                        Row(
+                                          children: [
+                                            if (track.codec != null && track.codec!.isNotEmpty) ...[Text(track.codec!, style: TextStyle(color: Colors.white70, fontSize: 10)), SizedBox(width: 5)],
+
+                                            if (track.channelscount != null) Text(_getChannels(track.channelscount!), style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (track.language != null && track.language!.isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4)),
+                                      child: Text(track.language!, style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                        if (track.language != null && track.language!.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4)),
-                            child: Text(track.language!, style: TextStyle(color: Colors.white70, fontSize: 10)),
-                          ),
-                      ],
-                    ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
-              );
-            }),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -321,73 +359,83 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
       return const SizedBox();
     }
 
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Positioned(
       right: 16,
       bottom: 100,
-      child: Container(
-        width: 220,
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white24),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white24)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.subtitles, size: 16, color: Colors.white70),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Субтитры',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ),
-            ...subtitleTracks.map((track) {
-              final isSelected = track.id == currentSubtitle.id;
-              return Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _setSubtitleTrack(track),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue.withOpacity(0.3) : Colors.transparent,
-                      border: Border(bottom: track == subtitleTracks.last ? BorderSide.none : BorderSide(color: Colors.white12)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: screenHeight * 0.7),
+        child: Container(
+          width: 220,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Заголовок
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.white24)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.subtitles, size: 16, color: Colors.white70),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Субтитры',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, size: 16, color: isSelected ? Colors.blue : Colors.white54),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            track.id == 'no' ? 'Отключить' : track.title ?? 'Субтитры ${track.id}',
-                            style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...subtitleTracks.map((track) {
+                        final isSelected = track.id == currentSubtitle.id;
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _setSubtitleTrack(track),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.blue.withOpacity(0.3) : Colors.transparent,
+                                border: Border(bottom: track == subtitleTracks.last ? BorderSide.none : BorderSide(color: Colors.white12)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, size: 16, color: isSelected ? Colors.blue : Colors.white54),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(track.id == 'no' ? 'Отключить' : track.title ?? 'Субтитры ${track.id}', style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13)),
+                                  ),
+                                  if (track.language != null && track.language!.isNotEmpty && track.id != 'no')
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4)),
+                                      child: Text(track.language!, style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                        if (track.language != null && track.language!.isNotEmpty && track.id != 'no')
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4)),
-                            child: Text(track.language!, style: TextStyle(color: Colors.white70, fontSize: 10)),
-                          ),
-                      ],
-                    ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
-              );
-            }),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
