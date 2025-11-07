@@ -247,7 +247,7 @@ class _AddPageState extends ConsumerState<AddPage> {
                 // Выбор категории
                 DropdownButtonFormField<String>(
                   initialValue: _selectedCategory,
-                  decoration: const InputDecoration(labelText: 'Ctegory', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
                   items: _categories.map((category) {
                     return DropdownMenuItem(value: category, child: Text(category));
                   }).toList(),
