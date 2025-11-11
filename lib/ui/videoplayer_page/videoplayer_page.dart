@@ -41,6 +41,7 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
     _setupDurationListener();
     _setupPlaylistListener();
     _setupVolumeListener();
+    _trackListener();
     _setupMetadataListener();
   }
 
@@ -150,6 +151,23 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
     });
   }
 
+  void _trackListener() {
+    player.stream.track.listen((track) {
+      if (player.state.track.audio.channelscount != null) {
+        if (player.state.track.audio.channelscount == 6) {
+          setAudioFilter(player, 'lavfi=[pan=5.1|c0=1.0*c0|c1=0.0*c1|c2=0.0*c2|c3=0.0*c3|c4=1.0*c4|c5=0.0*c5]');
+          // setAudioFilter(player, 'lavfi=[pan=5.1|c0=0|c1=0|c2=5|c3=0|c4=0|c5=0],loudnorm=I=-16:TP=-1:LRA=2,lavfi="acompressor=10"');
+        } else if (player.state.track.audio.channelscount == 8) {
+          setAudioFilter(player, 'lavfi=[pan=7.1|c0=1.0*c0|c1=0.0*c1|c2=0.0*c2|c3=0.0*c3|c4=1.0*c4|c5=0.0*c5|c6=1.0*c6|c7=0.0*c7]');
+        } else {
+          setAudioFilter(player, '');
+        }
+      } else {
+        setAudioFilter(player, '');
+      }
+    });
+  }
+
   void _setupMetadataListener() {
     player.stream.buffer.listen((onData) {
       if (!_isMetaLoaded && onData.inMilliseconds > 100) {
@@ -178,6 +196,17 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
         player.setAudioTrack(currAudio);
       }
     });
+  }
+
+  Future<void> setAudioFilter(Player player, String filter) async {
+    if (player.platform is NativePlayer) {
+      final native = player.platform as NativePlayer;
+      await native.setProperty('af', '');
+      await native.setProperty('af-add', filter);
+      print('Audio filter set: $filter');
+    } else {
+      print('setAudioFilter: current platform is not NativePlayer');
+    }
   }
 
   @override
