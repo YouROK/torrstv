@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:torrstv/ui/videoplayer_page/videoplayer_settings_page/videoplayer_settings_page.dart';
 
 class VideoPlayerDesktopControls extends StatefulWidget {
   final VideoState state;
@@ -213,16 +214,38 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        children: [MaterialDesktopSkipPreviousButton(), MaterialDesktopPlayOrPauseButton(), MaterialDesktopSkipNextButton(), MaterialDesktopPositionIndicator(), MaterialDesktopVolumeButton(), const Spacer(), _buildAudioTrackButton(), _buildSubtitleTrackButton(), MaterialDesktopFullscreenButton()],
+        children: [
+          MaterialDesktopSkipPreviousButton(),
+          MaterialDesktopPlayOrPauseButton(),
+          MaterialDesktopSkipNextButton(),
+          MaterialDesktopPositionIndicator(),
+          MaterialDesktopVolumeButton(),
+          const Spacer(),
+          _buildSettingsButton(),
+          _buildAudioTrackButton(),
+          _buildSubtitleTrackButton(),
+          MaterialDesktopFullscreenButton(),
+        ],
       ),
     );
   }
 
+  Widget _buildSettingsButton() {
+    return MaterialDesktopCustomButton(
+      onPressed: () {
+        final player = widget.state.widget.controller.player;
+        // player.pause();
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => VideoPlayerSettingsPage(player)));
+      },
+      icon: Icon(Icons.settings, color: Colors.white),
+      iconSize: 22,
+    );
+  }
+
   Widget _buildAudioTrackButton() {
-    final currentAudio = widget.state.widget.controller.player.state.track.audio;
     return MaterialDesktopCustomButton(
       onPressed: _toggleAudioTracks,
-      icon: Icon(Icons.audiotrack, color: currentAudio.id != 'auto' ? Colors.blue : Colors.white),
+      icon: Icon(Icons.audiotrack, color: Colors.white),
       iconSize: 22,
     );
   }
@@ -296,7 +319,7 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ...audioTracks.map((track) {
+                      ...audioTracks.where((track) => track.id != 'auto' && track.id != 'no').map((track) {
                         final isSelected = track.id == currentAudio.id;
                         return Material(
                           color: Colors.transparent,
@@ -317,7 +340,7 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(track.id == 'no' ? 'Отключить' : track.title ?? 'Аудио ${track.id}', style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13)),
+                                        Text(track.title ?? 'Аудио ${track.id}', style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13)),
                                         Row(
                                           children: [
                                             if (track.codec != null && track.codec!.isNotEmpty) ...[Text(track.codec!, style: TextStyle(color: Colors.white70, fontSize: 10)), SizedBox(width: 5)],

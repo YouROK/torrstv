@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
@@ -9,6 +11,8 @@ import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/core/settings/videoplayer_settings.dart';
 import 'package:torrstv/ui/torrents_page/torrent_info_page/mime.dart';
 import 'package:torrstv/ui/videoplayer_page/videoplayer_desktop_controls.dart';
+
+import 'audio_filter_utils.dart';
 
 class InternalVideoPlayer extends ConsumerStatefulWidget {
   final dynamic torrent;
@@ -153,18 +157,18 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
 
   void _trackListener() {
     player.stream.track.listen((track) {
-      if (player.state.track.audio.channelscount != null) {
-        if (player.state.track.audio.channelscount == 6) {
-          setAudioFilter(player, 'lavfi=[pan=5.1|c0=1.0*c0|c1=0.0*c1|c2=0.0*c2|c3=0.0*c3|c4=1.0*c4|c5=0.0*c5]');
-          // setAudioFilter(player, 'lavfi=[pan=5.1|c0=0|c1=0|c2=5|c3=0|c4=0|c5=0],loudnorm=I=-16:TP=-1:LRA=2,lavfi="acompressor=10"');
-        } else if (player.state.track.audio.channelscount == 8) {
-          setAudioFilter(player, 'lavfi=[pan=7.1|c0=1.0*c0|c1=0.0*c1|c2=0.0*c2|c3=0.0*c3|c4=1.0*c4|c5=0.0*c5|c6=1.0*c6|c7=0.0*c7]');
-        } else {
-          setAudioFilter(player, '');
-        }
-      } else {
-        setAudioFilter(player, '');
-      }
+      applyAudioFiltersFromSettings(player, vsets, player.state.track.audio.channelscount);
+      // if (player.state.track.audio.channelscount != null) {
+      // if (player.state.track.audio.channelscount == 6) {
+      //   setAudioFilter(player, 'lavfi=[pan=5.1|c0=1.0*c0|c1=1.0*c1|c2=1.0*c2|c3=1.0*c3|c4=1.0*c4|c5=1.0*c5],loudnorm=I=-16:TP=-1:LRA=2,lavfi="acompressor=threshold=-30dB:ratio=2:attack=0.01:release=0.05"');
+      // } else if (player.state.track.audio.channelscount == 8) {
+      //   setAudioFilter(player, 'lavfi=[pan=7.1|c0=1.0*c0|c1=0.0*c1|c2=0.0*c2|c3=0.0*c3|c4=1.0*c4|c5=0.0*c5|c6=1.0*c6|c7=0.0*c7]');
+      // } else {
+      //   setAudioFilter(player, '');
+      // }
+      // } else {
+      //   setAudioFilter(player, '');
+      // }
     });
   }
 
@@ -175,7 +179,19 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
         //load external subs/audio
 
         final currSub = player.state.track.subtitle;
-        final currAudio = player.state.track.audio;
+        var currAudio = player.state.track.audio;
+
+        //autoselect track
+        if (currAudio.id.isNotEmpty && (currAudio.id == 'auto' || currAudio.id == 'no') && player.state.tracks.audio.length > 2) {
+          String languageCode = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+          final list = player.state.tracks.audio.where((track) => track.language != null && track.language!.toLowerCase().contains(languageCode));
+
+          if (list.isNotEmpty) {
+            currAudio = list.first;
+          } else {
+            currAudio = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').first;
+          }
+        }
 
         final playlist = player.state.playlist;
         final currentIndex = playlist.index;
@@ -196,17 +212,6 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
         player.setAudioTrack(currAudio);
       }
     });
-  }
-
-  Future<void> setAudioFilter(Player player, String filter) async {
-    if (player.platform is NativePlayer) {
-      final native = player.platform as NativePlayer;
-      await native.setProperty('af', '');
-      await native.setProperty('af-add', filter);
-      print('Audio filter set: $filter');
-    } else {
-      print('setAudioFilter: current platform is not NativePlayer');
-    }
   }
 
   @override
