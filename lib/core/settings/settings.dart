@@ -53,4 +53,12 @@ class Settings {
   Future<bool> getViewing(String hash, int id) async {
     return _prefs.getBool('viewing-$hash-$id') ?? false;
   }
+
+  String getOuterPlayer() {
+    return _prefs.getString('outer-player') ?? "";
+  }
+
+  void setOuterPlayer(String player) async {
+    _prefs.setString('outer-player', player);
+  }
 }

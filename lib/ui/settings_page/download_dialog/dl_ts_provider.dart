@@ -137,7 +137,7 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
             return;
           }
           if (Platform.isMacOS) {
-            final resultXattr = await Process.run('xattr', ['-d', 'com.apple.quarantine', filePath]);
+            final resultXattr = await Process.run('xattr', ['-r', '-d', 'com.apple.quarantine', filePath]);
             if (resultXattr.exitCode != 0) {
               print('Warning: Error removing quarantine attribute (xattr): ${resultXattr.stderr}');
               state = state.copyWith(message: 'Download complete. Error remove quarantine attribute.');

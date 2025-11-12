@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
@@ -26,7 +28,7 @@ class TorrentInfoPage extends ConsumerWidget {
           if (value['preloaded_bytes'] >= value['preload_size']) {
             _opened = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _openVideoPlayer(context);
+              _openVideoPlayer(context, ref);
             });
           }
         }
@@ -271,12 +273,19 @@ class TorrentInfoPage extends ConsumerWidget {
     _opened = false;
   }
 
-  void _openVideoPlayer(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => InternalVideoPlayer(torrent: info, file: file),
-      ),
-    );
+  void _openVideoPlayer(BuildContext context, WidgetRef ref) {
+    final outerPlayer = ref.read(settingsProvider).getOuterPlayer();
+    if (outerPlayer.isNotEmpty) {
+      final tsUrl = ref.read(torrServerApiProvider).getTSUrl();
+      final url = '$tsUrl/stream/play?link=${info['hash']}&index=${file['id']}&play';
+      Process.start('mpv', [url], mode: ProcessStartMode.detached);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InternalVideoPlayer(torrent: info, file: file),
+        ),
+      );
+    }
   }
 }

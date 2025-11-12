@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/core/constants/app_info.dart';
@@ -21,6 +22,13 @@ final _authControllerProvider = Provider.autoDispose<TextEditingController>((ref
   return controller;
 });
 
+final _playerControllerProvider = Provider.autoDispose<TextEditingController>((ref) {
+  final currentPlayer = ref.watch(settingsProvider.select((s) => s.getOuterPlayer()));
+  final controller = TextEditingController(text: currentPlayer);
+  ref.onDispose(() => controller.dispose());
+  return controller;
+});
+
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -33,8 +41,20 @@ class SettingsPage extends ConsumerWidget {
     final settingsNotifier = ref.read(settingsProvider);
     final hostController = ref.watch(_hostControllerProvider);
     final authController = ref.watch(_authControllerProvider);
+    final playerController = ref.watch(_playerControllerProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final showDownloadButton = isShowDownloadTS();
+    void pickFile() async {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: false);
+
+      if (result != null) {
+        String? filePath = result.files.single.path;
+
+        if (filePath != null) {
+          playerController.text = filePath;
+        }
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings'), backgroundColor: colorScheme.surface, elevation: 0),
@@ -45,6 +65,7 @@ class SettingsPage extends ConsumerWidget {
           constraints: const BoxConstraints(maxWidth: 800),
           child: ListView(
             children: [
+              //Адрес ТС
               TextField(
                 controller: hostController,
                 keyboardType: TextInputType.url,
@@ -61,8 +82,9 @@ class SettingsPage extends ConsumerWidget {
                   labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
                 ),
               ),
-              const SizedBox(height: 20),
 
+              //Аутентификация
+              const SizedBox(height: 20),
               TextField(
                 controller: authController,
                 keyboardType: TextInputType.url,
@@ -79,12 +101,44 @@ class SettingsPage extends ConsumerWidget {
                   labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
                 ),
               ),
-              const SizedBox(height: 20),
 
+              // Выбор плеера
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: playerController,
+                      keyboardType: TextInputType.url,
+                      style: TextStyle(color: colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        labelText: 'Select a player',
+                        hintText: 'vlc, mpv, etc...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: colorScheme.primary),
+                        ),
+                        filled: true,
+                        fillColor: colorScheme.surface.withOpacity(0.5),
+                        labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 5),
+                  SizedBox(
+                    width: 64,
+                    child: IconButton(onPressed: pickFile, icon: const Icon(Icons.folder_open)),
+                  ),
+                  SizedBox(width: 5),
+                ],
+              ),
+
+              const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: () {
                   settingsNotifier.setTSHost(hostController.text);
-                  settingsNotifier.setTSAuth(authController.text); //TODO check is base64 need
+                  settingsNotifier.setTSAuth(authController.text);
+                  settingsNotifier.setOuterPlayer(playerController.text);
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved!')));
                 },
                 icon: const Icon(Icons.save),
