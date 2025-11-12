@@ -275,7 +275,8 @@ class TorrentInfoPage extends ConsumerWidget {
 
   void _openVideoPlayer(BuildContext context, WidgetRef ref) {
     final outerPlayer = ref.read(settingsProvider).getOuterPlayer();
-    if (outerPlayer.isNotEmpty) {
+    final outerPlayerEnabled = ref.read(settingsProvider).isOuterPlayerEnable();
+    if (outerPlayerEnabled && outerPlayer.isNotEmpty) {
       final tsUrl = ref.read(torrServerApiProvider).getTSUrl();
       final url = '$tsUrl/stream/play?link=${info['hash']}&index=${file['id']}&play';
       Process.start('mpv', [url], mode: ProcessStartMode.detached);

@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:torrstv/core/constants/app_info.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/services/torrserver/ts.dart';
@@ -29,6 +30,11 @@ final _playerControllerProvider = Provider.autoDispose<TextEditingController>((r
   return controller;
 });
 
+final _isOuterPlayerEnabledLocalProvider = StateProvider.autoDispose<bool>((ref) {
+  final initialValue = ref.watch(settingsProvider.select((s) => s.isOuterPlayerEnable()));
+  return initialValue;
+});
+
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -42,8 +48,13 @@ class SettingsPage extends ConsumerWidget {
     final hostController = ref.watch(_hostControllerProvider);
     final authController = ref.watch(_authControllerProvider);
     final playerController = ref.watch(_playerControllerProvider);
+    final isOuterPlayerEnabled = ref.watch(_isOuterPlayerEnabledLocalProvider);
+    final isOuterPlayerEnabledNotifier = ref.read(_isOuterPlayerEnabledLocalProvider.notifier);
+
     final colorScheme = Theme.of(context).colorScheme;
+
     final showDownloadButton = isShowDownloadTS();
+
     void pickFile() async {
       FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: false);
 
@@ -106,6 +117,17 @@ class SettingsPage extends ConsumerWidget {
               const SizedBox(height: 20),
               Row(
                 children: [
+                  SizedBox(width: 5),
+                  SizedBox(
+                    width: 64,
+                    child: Switch(
+                      onChanged: (value) {
+                        isOuterPlayerEnabledNotifier.state = value;
+                      },
+                      value: isOuterPlayerEnabled,
+                    ),
+                  ),
+                  SizedBox(width: 5),
                   Expanded(
                     child: TextField(
                       controller: playerController,
@@ -139,6 +161,8 @@ class SettingsPage extends ConsumerWidget {
                   settingsNotifier.setTSHost(hostController.text);
                   settingsNotifier.setTSAuth(authController.text);
                   settingsNotifier.setOuterPlayer(playerController.text);
+                  final newOuterPlayerEnableState = ref.read(_isOuterPlayerEnabledLocalProvider);
+                  settingsNotifier.setOuterPlayerEnable(newOuterPlayerEnableState);
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved!')));
                 },
                 icon: const Icon(Icons.save),

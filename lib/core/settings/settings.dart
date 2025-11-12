@@ -61,4 +61,12 @@ class Settings {
   void setOuterPlayer(String player) async {
     _prefs.setString('outer-player', player);
   }
+
+  bool isOuterPlayerEnable() {
+    return _prefs.getBool('outer-player-enable') ?? false;
+  }
+
+  void setOuterPlayerEnable(bool enable) async {
+    _prefs.setBool('outer-player-enable', enable);
+  }
 }
