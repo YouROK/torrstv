@@ -15,10 +15,21 @@ class SearchCard extends ConsumerWidget {
 
     final String title = torrent['title'] as String? ?? 'Название не указано';
     final String trackerName = torrent['trackerName'] as String? ?? 'N/A';
+    final String magnet = torrent['magnet'] as String? ?? '';
     final int sid = torrent['sid'] as int? ?? 0;
     final int pir = torrent['pir'] as int? ?? 0;
     final int size = torrent['size'] as int? ?? 0;
     final String createTime = torrent['createTime'] as String? ?? '';
+
+    String hash = '';
+    if (magnet.isNotEmpty) {
+      final uri = Uri.parse(magnet);
+      final xtParam = uri.queryParameters['xt'];
+
+      if (xtParam != null && xtParam.startsWith('urn:btih:')) {
+        hash = xtParam.substring('urn:btih:'.length).toUpperCase();
+      }
+    }
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
@@ -44,7 +55,7 @@ class SearchCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
 
-                    _buildInfo(trackerName, sid, pir),
+                    _buildInfo(trackerName, hash, sid, pir),
                   ],
                 ),
               ),
@@ -58,7 +69,7 @@ class SearchCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfo(String trackerName, int sid, int pir) {
+  Widget _buildInfo(String trackerName, String hash, int sid, int pir) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -77,6 +88,13 @@ class SearchCard extends ConsumerWidget {
         const Icon(Icons.download, size: 16, color: Colors.red),
         const SizedBox(width: 2),
         Text('$pir', style: const TextStyle(fontSize: 14, color: Colors.red)),
+
+        // Hash
+        const SizedBox(width: 10),
+        Text(
+          '$hash',
+          style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
+        ),
       ],
     );
   }
