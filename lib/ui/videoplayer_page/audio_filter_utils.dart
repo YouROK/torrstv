@@ -2,6 +2,8 @@ import 'package:media_kit/media_kit.dart';
 import 'package:torrstv/core/settings/videoplayer_settings.dart';
 
 Future<void> applyAudioFiltersFromSettings(Player player, VideoPlayerSettings sets, int? channels) async {
+  if (player.state.playlist.medias.isEmpty) return;
+
   if (!sets.isAudioFilters()) {
     setAudioFilter(player, '');
     return;
