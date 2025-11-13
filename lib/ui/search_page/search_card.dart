@@ -73,27 +73,41 @@ class SearchCard extends ConsumerWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Трекер
-        Text(trackerName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-        const SizedBox(width: 10),
-
-        // Сиды
-        const Icon(Icons.upload, size: 16, color: Colors.green),
-        const SizedBox(width: 2),
-        Text('$sid', style: const TextStyle(fontSize: 14, color: Colors.green)),
+        Expanded(
+          flex: 1,
+          child: Text(trackerName, style: const TextStyle(fontSize: 14), overflow: TextOverflow.ellipsis, maxLines: 1),
+        ),
 
         const SizedBox(width: 10),
 
-        // Пиры
-        const Icon(Icons.download, size: 16, color: Colors.red),
-        const SizedBox(width: 2),
-        Text('$pir', style: const TextStyle(fontSize: 14, color: Colors.red)),
+        Expanded(
+          flex: 1,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.upload, size: 16, color: Colors.green),
+              const SizedBox(width: 2),
+              Text('$sid', style: const TextStyle(fontSize: 14, color: Colors.green)),
 
-        // Hash
+              const SizedBox(width: 10),
+
+              const Icon(Icons.download, size: 16, color: Colors.red),
+              const SizedBox(width: 2),
+              Text('$pir', style: const TextStyle(fontSize: 14, color: Colors.red)),
+            ],
+          ),
+        ),
+
         const SizedBox(width: 10),
-        Text(
-          '$hash',
-          style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
+
+        Expanded(
+          flex: 3,
+          child: Text(
+            hash,
+            style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
         ),
       ],
     );
