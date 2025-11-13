@@ -102,9 +102,9 @@ Future<void> applyAudioFiltersFromSettings(Player player, VideoPlayerSettings se
 
   if (sets.getSmoothing()) {
     // Используем простой аудиокомпрессор для "сглаживания" (уменьшения динамического диапазона)
-    // threshold=-30dB: порог, ratio=2:1: компрессия
+    // threshold: порог, ratio: компрессия
     // attack/release: скорость срабатывания
-    filters.add('acompressor=threshold=-30dB:ratio=2:attack=0.01:release=0.05');
+    filters.add('acompressor=threshold=-15dB:ratio=2:attack=0.1:release=0.5');
   }
 
   String finalFilter = filters.join(',');
