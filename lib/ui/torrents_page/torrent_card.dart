@@ -140,7 +140,7 @@ class TorrentCard extends ConsumerWidget {
       children: [
         if (hash != null && hash!.isNotEmpty)
           Text(
-            hash!,
+            hash!.toUpperCase(),
             style: TextStyle(fontFamily: 'sans-serif-condensed', color: colorScheme.onSurface.withOpacity(0.7), fontSize: 14),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

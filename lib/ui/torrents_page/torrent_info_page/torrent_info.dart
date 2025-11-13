@@ -94,7 +94,7 @@ class TorrentInfoPage extends ConsumerWidget {
                           ),
                         SizedBox(height: 8),
                         Text(
-                          'Хэш: $hash',
+                          'Хэш: ${hash.toUpperCase()}',
                           style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
                         ),
                       ],
