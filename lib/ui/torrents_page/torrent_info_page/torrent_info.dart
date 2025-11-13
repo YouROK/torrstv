@@ -279,7 +279,7 @@ class TorrentInfoPage extends ConsumerWidget {
     if (outerPlayerEnabled && outerPlayer.isNotEmpty) {
       final tsUrl = ref.read(torrServerApiProvider).getTSUrl();
       final url = '$tsUrl/stream/play?link=${info['hash']}&index=${file['id']}&play';
-      Process.start('mpv', [url], mode: ProcessStartMode.detached);
+      Process.start(outerPlayer.trim(), [url], mode: ProcessStartMode.detached);
     } else {
       Navigator.push(
         context,
