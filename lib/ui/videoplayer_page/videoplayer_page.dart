@@ -39,6 +39,9 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
   void initState() {
     super.initState();
     player = Player();
+    player.stream.log.listen((event) {
+      print('MPV [${event.level.toUpperCase()}]: ${event.text}');
+    });
     controller = VideoController(player);
     _initializePlayer();
     _setupPositionListener();
@@ -158,17 +161,6 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
   void _trackListener() {
     player.stream.track.listen((track) {
       applyAudioFiltersFromSettings(player, vsets, player.state.track.audio.channelscount);
-      // if (player.state.track.audio.channelscount != null) {
-      // if (player.state.track.audio.channelscount == 6) {
-      //   setAudioFilter(player, 'lavfi=[pan=5.1|c0=1.0*c0|c1=1.0*c1|c2=1.0*c2|c3=1.0*c3|c4=1.0*c4|c5=1.0*c5],loudnorm=I=-16:TP=-1:LRA=2,lavfi="acompressor=threshold=-30dB:ratio=2:attack=0.01:release=0.05"');
-      // } else if (player.state.track.audio.channelscount == 8) {
-      //   setAudioFilter(player, 'lavfi=[pan=7.1|c0=1.0*c0|c1=0.0*c1|c2=0.0*c2|c3=0.0*c3|c4=1.0*c4|c5=0.0*c5|c6=1.0*c6|c7=0.0*c7]');
-      // } else {
-      //   setAudioFilter(player, '');
-      // }
-      // } else {
-      //   setAudioFilter(player, '');
-      // }
     });
   }
 
