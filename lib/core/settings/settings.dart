@@ -9,8 +9,8 @@ class Settings {
     return _prefs.getString("ts_auth") ?? "";
   }
 
-  Future<void> setTSAuth(String auth) async {
-    await _prefs.setString("ts_auth", auth);
+  void setTSAuth(String auth) {
+    _prefs.setString("ts_auth", auth);
   }
 
   String getTSHost() {
@@ -18,40 +18,47 @@ class Settings {
     return host.replaceAll(RegExp(r'/*$'), '');
   }
 
-  Future<void> setTSHost(String host) async {
+  void setTSHost(String host) {
     var shost = host.trim();
     if (!shost.startsWith("http://") && !shost.startsWith("https://")) {
       shost = "http://$shost";
     }
-    await _prefs.setString("ts_host", shost);
+    _prefs.setString("ts_host", shost);
   }
 
-  Future<void> savePosition(String hash, int id, Duration position) async {
-    await _prefs.setDouble('position-$hash-$id', position.inSeconds.toDouble());
+  void savePosition(String hash, int id, Duration position) {
+    _prefs.setDouble('position-$hash-$id', position.inSeconds.toDouble());
   }
 
-  Future<int> loadPosition(String hash, int id) async {
+  int loadPosition(String hash, int id) {
     return _prefs.getDouble('position-$hash-$id')?.toInt() ?? 0;
   }
 
-  Future<void> saveDuration(String hash, int id, Duration duration) async {
-    await _prefs.setDouble('duration-$hash-$id', duration.inSeconds.toDouble());
+  void saveDuration(String hash, int id, Duration duration) {
+    _prefs.setDouble('duration-$hash-$id', duration.inSeconds.toDouble());
   }
 
-  Future<int> loadDuration(String hash, int id) async {
+  int loadDuration(String hash, int id) {
     return _prefs.getDouble('duration-$hash-$id')?.toInt() ?? 0;
   }
 
-  Future<void> setViewing(String hash, int id, bool viewing) async {
+  void setViewing(String hash, int id, bool viewing) {
     if (viewing) {
-      await _prefs.setBool('viewing-$hash-$id', true);
+      _prefs.setBool('viewing-$hash-$id', true);
     } else {
-      await _prefs.remove('viewing-$hash-$id');
+      _prefs.remove('viewing-$hash-$id');
     }
   }
 
-  Future<bool> getViewing(String hash, int id) async {
+  bool getViewing(String hash, int id) {
     return _prefs.getBool('viewing-$hash-$id') ?? false;
+  }
+
+  void clearViewing(String hash) {
+    final remKeys = _prefs.getKeys().where((k) => k.startsWith('position-$hash') || k.startsWith('duration-$hash') || k.startsWith('viewing-$hash'));
+    for (var k in remKeys) {
+      _prefs.remove(k);
+    }
   }
 
   String getOuterPlayer() {
