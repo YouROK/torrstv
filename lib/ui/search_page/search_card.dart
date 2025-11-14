@@ -7,7 +7,9 @@ class SearchCard extends ConsumerWidget {
   final dynamic torrent;
   final VoidCallback? onTap;
 
-  const SearchCard({super.key, required this.torrent, required this.onTap});
+  SearchCard({super.key, required this.torrent, required this.onTap});
+
+  final _reg = RegExp(r'magnet.+=urn:btih:([a-zA-Z0-9]+)&?');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,11 +25,13 @@ class SearchCard extends ConsumerWidget {
 
     String hash = '';
     if (magnet.isNotEmpty) {
-      final uri = Uri.parse(magnet);
-      final xtParam = uri.queryParameters['xt'];
-
-      if (xtParam != null && xtParam.startsWith('urn:btih:')) {
-        hash = xtParam.substring('urn:btih:'.length).toUpperCase();
+      try {
+        final match = _reg.firstMatch(magnet);
+        if (match != null) {
+          hash = match.group(1)?.toUpperCase() ?? '';
+        }
+      } catch (e) {
+        print(e.toString());
       }
     }
 
