@@ -170,12 +170,12 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
         _isMetaLoaded = true;
         //load external subs/audio
 
+        String languageCode = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
         final currSub = player.state.track.subtitle;
         var currAudio = player.state.track.audio;
 
         //autoselect track
         if (currAudio.id.isNotEmpty && (currAudio.id == 'auto' || currAudio.id == 'no') && player.state.tracks.audio.length > 2) {
-          String languageCode = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
           final list = player.state.tracks.audio.where((track) => track.language != null && track.language!.toLowerCase().contains(languageCode));
 
           if (list.isNotEmpty) {
@@ -202,6 +202,45 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
         //return selected subs/audio
         player.setSubtitleTrack(currSub);
         player.setAudioTrack(currAudio);
+
+        // Select Subs
+        final subsDefs = vsets.getDefSubs();
+        if (subsDefs == 0) {
+          final list = player.state.tracks.subtitle.where((e) => e.id == 'no');
+          if (list.isNotEmpty) player.setSubtitleTrack(list.first);
+        } else if (subsDefs == 1) {
+          final list = player.state.tracks.subtitle.where((e) => e.id == 'auto');
+          if (list.isNotEmpty) player.setSubtitleTrack(list.first);
+        } else if (subsDefs == 2) {
+          final list = player.state.tracks.subtitle.where((e) => e.title?.toLowerCase().contains('forc') ?? false);
+          if (list.isNotEmpty) {
+            final filtredlang = list.where((e) => e.language?.toLowerCase().contains(languageCode) ?? false);
+            if (filtredlang.isNotEmpty) {
+              player.setSubtitleTrack(filtredlang.first);
+            } else {
+              player.setSubtitleTrack(list.first);
+            }
+          }
+        } else if (subsDefs == 3) {
+          var list = player.state.tracks.subtitle.where((e) => (e.id != 'auto' && e.id != 'no'));
+          final listFrc = list.where((e) => e.title?.toLowerCase().contains('forc') ?? false);
+          final listNFrc = list.where((e) => !(e.title?.toLowerCase().contains('forc') ?? false));
+
+          if (listNFrc.isNotEmpty) {
+            list = listNFrc;
+          } else {
+            list = listFrc;
+          }
+
+          if (list.isNotEmpty) {
+            final filtredlang = list.where((e) => e.language?.toLowerCase().contains(languageCode) ?? false);
+            if (filtredlang.isNotEmpty) {
+              player.setSubtitleTrack(filtredlang.first);
+            } else {
+              player.setSubtitleTrack(list.first);
+            }
+          }
+        }
       }
     });
   }

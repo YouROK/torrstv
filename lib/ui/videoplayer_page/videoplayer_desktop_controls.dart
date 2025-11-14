@@ -1,20 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/ui/videoplayer_page/videoplayer_settings_page/videoplayer_settings_page.dart';
 
-class VideoPlayerDesktopControls extends StatefulWidget {
+class VideoPlayerDesktopControls extends ConsumerStatefulWidget {
   final VideoState state;
 
   const VideoPlayerDesktopControls({super.key, required this.state});
 
   @override
-  State<VideoPlayerDesktopControls> createState() => _VideoPlayerDesktopControlsState();
+  ConsumerState<VideoPlayerDesktopControls> createState() => _VideoPlayerDesktopControlsState();
 }
 
-class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls> {
+class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopControls> {
   bool _mount = false;
   bool _visible = false;
   Timer? _timer;
@@ -105,6 +107,20 @@ class _VideoPlayerDesktopControlsState extends State<VideoPlayerDesktopControls>
 
   Future<void> _setSubtitleTrack(SubtitleTrack track) async {
     await widget.state.widget.controller.player.setSubtitleTrack(track);
+
+    final sets = ref.read(videoPlayerSettingsProvider);
+    if (track.id == 'auto') {
+      sets.setDefSubs(1);
+    } else if (track.id == 'no') {
+      sets.setDefSubs(0);
+    } else {
+      if (track.title?.toLowerCase().contains('forc') ?? false) {
+        sets.setDefSubs(2);
+      } else {
+        sets.setDefSubs(3);
+      }
+    }
+
     setState(() {
       _showSubtitleTracks = false;
     });

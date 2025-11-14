@@ -5,6 +5,19 @@ class VideoPlayerSettings {
 
   VideoPlayerSettings(this._prefs);
 
+  //Subs
+  void setDefSubs(int value) {
+    // 0 - disable
+    // 1 - auto
+    // 2 - first force by lang
+    // 3 - first not force or forced by lang
+    _prefs.setInt("vp_def_subs", value);
+  }
+
+  int getDefSubs() {
+    return _prefs.getInt("vp_def_subs") ?? 0;
+  }
+
   //Vol
   double getVolume() {
     return _prefs.getDouble("vp_volume") ?? 100.0;
