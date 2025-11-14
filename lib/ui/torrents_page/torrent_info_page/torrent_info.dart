@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/settings/settings.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
@@ -9,12 +10,14 @@ import 'package:torrstv/core/utils/bytes.dart';
 import 'package:torrstv/ui/torrents_page/torrent_info_page/mime.dart';
 import 'package:torrstv/ui/torrents_page/torrent_info_page/torrent_info_provider.dart';
 import 'package:torrstv/ui/videoplayer_page/videoplayer_page.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class TorrentInfoPage extends ConsumerWidget {
   final String hash;
   dynamic info;
   dynamic file;
   bool _opened = false;
+  bool is_open_player = true;
 
   TorrentInfoPage({super.key, required this.hash});
 
@@ -25,10 +28,19 @@ class TorrentInfoPage extends ConsumerWidget {
     torrentAsync.whenData((value) {
       if (!_opened && file != null && info != null) {
         if (value['preload_size'] != null && value['preloaded_bytes'] != null) {
-          if (value['preloaded_bytes'] >= value['preload_size']) {
+          if (value['preloaded_bytes'] >= value['preload_size'] || (value['preloaded_bytes'] > 50000 && value['stat'] == 3)) {
             _opened = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _openVideoPlayer(context, ref);
+              if (is_open_player) {
+                _openVideoPlayer(context, ref);
+              } else {
+                final tsUrl = ref.read(torrServerApiProvider).getTSUrl();
+                var fn = p.basename(file['path']);
+                if (fn.isEmpty) fn = 'DownloadTS';
+
+                final url = '$tsUrl/stream/$fn?link=${info['hash']}&index=${file['id']}&play';
+                launchUrlString(url);
+              }
             });
           }
         }
@@ -203,7 +215,15 @@ class TorrentInfoPage extends ConsumerWidget {
       files.addAll(info['file_stats']);
     }
 
-    return files.where((file) => Mime.getMimeType(file['path']) == "video/*").toList();
+    is_open_player = true;
+    final videoFiles = files.where((file) => Mime.getMimeType(file['path']) == "video/*").toList();
+    if (videoFiles.isNotEmpty) return videoFiles;
+
+    final audioFiles = files.where((file) => Mime.getMimeType(file['path']) == "audio/*").toList();
+    if (audioFiles.isNotEmpty) return audioFiles;
+
+    is_open_player = false;
+    return files;
   }
 
   Widget _buildFileItem(BuildContext context, dynamic info, dynamic file, WidgetRef ref) {
@@ -229,11 +249,12 @@ class TorrentInfoPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(fileName, maxLines: 2, overflow: TextOverflow.ellipsis),
-                if (hasProgress) LinearProgressIndicator(value: progress, backgroundColor: Colors.grey[300], valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), minHeight: 1),
+                if (hasProgress)
+                  LinearProgressIndicator(value: progress, backgroundColor: Colors.grey[300], valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), minHeight: 1),
               ],
             ),
             subtitle: Text(bytesFmt(fileSize)),
-            trailing: Icon(hasProgress ? Icons.play_circle_filled : Icons.play_arrow, color: Theme.of(context).colorScheme.primary),
+            trailing: Icon(is_open_player ? (hasProgress ? Icons.play_circle_filled : Icons.play_arrow) : Icons.download, color: Theme.of(context).colorScheme.primary),
             onTap: () {
               _onFileTap(context, info, file, ref);
             },

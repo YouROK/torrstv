@@ -82,19 +82,30 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
 
     final tsUrl = ref.read(torrServerApiProvider).getTSUrl();
 
-    final videoFiles = widget.torrent['file_stats'].where((file) => Mime.getMimeType(file['path']) == "video/*").toList();
+    List<Media> listMedia;
 
-    final futures = videoFiles.map<Future<Media>>((f) async {
-      final pos = await sets.loadPosition(widget.torrent['hash'], f['id']);
-      final extras = _findExternals(f, widget.torrent['file_stats']);
-      return Media(
-        '$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${f['id']}&play',
-        extras: extras,
-        start: Duration(seconds: pos),
-      );
-    }).toList();
+    final List<dynamic> videoFiles = widget.torrent['file_stats'].where((file) => Mime.getMimeType(file['path']) == "video/*").toList();
+    if (videoFiles.isNotEmpty) {
+      final futures = videoFiles.map<Future<Media>>((f) async {
+        final pos = await sets.loadPosition(widget.torrent['hash'], f['id']);
+        final extras = _findExternals(f, widget.torrent['file_stats']);
+        return Media(
+          '$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${f['id']}&play',
+          extras: extras,
+          start: Duration(seconds: pos),
+        );
+      }).toList();
 
-    final List<Media> listMedia = await Future.wait(futures);
+      listMedia = await Future.wait(futures);
+    } else {
+      final audioFiles = widget.torrent['file_stats'].where((file) => Mime.getMimeType(file['path']) == "audio/*").toList();
+      final futures = audioFiles.map<Future<Media>>((f) async {
+        final pos = await sets.loadPosition(widget.torrent['hash'], f['id']);
+        return Media('$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${f['id']}&play', start: Duration(seconds: pos));
+      }).toList();
+
+      listMedia = await Future.wait(futures);
+    }
 
     final mediaUrl = '$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${file['id']}&play';
     final index = listMedia.indexWhere((m) => m.uri == mediaUrl);
