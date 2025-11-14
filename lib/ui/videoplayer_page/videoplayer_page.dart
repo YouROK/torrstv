@@ -72,6 +72,8 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
     rets['subs'] = subs;
     rets['audio'] = audio;
 
+    rets['filename'] = p.basename(file['path']);
+
     return rets;
   }
 
@@ -84,10 +86,12 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
 
     List<Media> listMedia;
 
-    final List<dynamic> videoFiles = widget.torrent['file_stats'].where((file) => Mime.getMimeType(file['path']) == "video/*").toList();
-    if (videoFiles.isNotEmpty) {
-      final futures = videoFiles.map<Future<Media>>((f) async {
-        final pos = await sets.loadPosition(widget.torrent['hash'], f['id']);
+    List<dynamic> files = widget.torrent['file_stats'].where((file) => Mime.getMimeType(file['path']) == "video/*").toList();
+    if (files.isEmpty) files = widget.torrent['file_stats'].where((file) => Mime.getMimeType(file['path']) == "audio/*").toList();
+
+    if (files.isNotEmpty) {
+      final futures = files.map<Future<Media>>((f) async {
+        final pos = sets.loadPosition(widget.torrent['hash'], f['id']);
         final extras = _findExternals(f, widget.torrent['file_stats']);
         return Media(
           '$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${f['id']}&play',
@@ -98,13 +102,7 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
 
       listMedia = await Future.wait(futures);
     } else {
-      final audioFiles = widget.torrent['file_stats'].where((file) => Mime.getMimeType(file['path']) == "audio/*").toList();
-      final futures = audioFiles.map<Future<Media>>((f) async {
-        final pos = await sets.loadPosition(widget.torrent['hash'], f['id']);
-        return Media('$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${f['id']}&play', start: Duration(seconds: pos));
-      }).toList();
-
-      listMedia = await Future.wait(futures);
+      listMedia = List.empty();
     }
 
     final mediaUrl = '$tsUrl/stream/play?link=${widget.torrent['hash']}&index=${file['id']}&play';
