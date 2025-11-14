@@ -161,9 +161,9 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
           Positioned(
             left: 0,
             right: 0,
-            bottom: 100,
             top: 60,
-            child: GestureDetector(onTap: _onVideoTap, behavior: HitTestBehavior.opaque),
+            bottom: 100,
+            child: GestureDetector(onTap: _onVideoTap, behavior: HitTestBehavior.opaque, child: _buildCenterInfoOverlay()),
           ),
           Positioned(
             left: 0,
@@ -198,6 +198,180 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
     return Positioned.fill(
       child: Center(
         child: SizedBox(width: 100, height: 100, child: Icon(isPlaying ? Icons.play_arrow : Icons.pause, color: Colors.white, size: 50)),
+      ),
+    );
+  }
+
+  VideoTrack? _findActiveVideoTrackDetails(Player player) {
+    final videoTracks = player.state.tracks.video;
+
+    final activeId = player.state.track.video.id;
+    if (activeId != 'auto' && activeId != 'no') {
+      final explicitTrack = videoTracks.cast<VideoTrack?>().firstWhere((track) => track?.id == activeId && track?.codec != null, orElse: () => null);
+      if (explicitTrack != null) return explicitTrack;
+    }
+
+    return videoTracks.cast<VideoTrack?>().firstWhere(
+      (track) => track?.id != 'auto' && track?.id != 'no' && !(track?.image ?? false) && (track?.codec != null || track?.w != null),
+      orElse: () => null,
+    );
+  }
+
+  Widget _buildCenterInfoOverlay() {
+    final player = widget.state.widget.controller.player;
+    final playerState = player.state;
+
+    String videoInfo = '';
+    String videoCodec = '';
+    String videoFps = '';
+
+    final activeVideoTrack = _findActiveVideoTrackDetails(player);
+
+    if (activeVideoTrack != null) {
+      final width = activeVideoTrack.w ?? playerState.width;
+      final height = activeVideoTrack.h ?? playerState.height;
+
+      if (width != null && height != null && width > 0 && height > 0) {
+        videoInfo = '${width}x${height}';
+      }
+
+      if (activeVideoTrack.codec != null && activeVideoTrack.codec!.isNotEmpty) {
+        videoCodec = activeVideoTrack.codec!.toUpperCase();
+      }
+
+      if (activeVideoTrack.fps != null && activeVideoTrack.fps! > 0) {
+        videoFps = '${activeVideoTrack.fps!.round()} FPS';
+      }
+    }
+
+    String audioInfo = '';
+    final currentAudio = playerState.track.audio;
+    if (currentAudio.id != 'auto' && currentAudio.id != 'no') {
+      final lang = currentAudio.language?.toUpperCase() ?? '';
+      final title = currentAudio.title;
+
+      String codec = currentAudio.codec?.toUpperCase() ?? '';
+      String channels = _getChannels(currentAudio.channelscount ?? playerState.audioParams.channelCount ?? 0);
+      String bitrate = '';
+      if (playerState.audioBitrate != null && playerState.audioBitrate! > 0) {
+        bitrate = '${(playerState.audioBitrate! / 1000).round()} kbps';
+      }
+
+      if (title != null && title.isNotEmpty) {
+        audioInfo += title;
+      } else if (lang.isNotEmpty) {
+        audioInfo += lang;
+      } else {
+        audioInfo += 'Аудио';
+      }
+
+      String techDetails = [codec, channels, bitrate].where((s) => s.isNotEmpty).join(', ');
+      if (techDetails.isNotEmpty) {
+        audioInfo += ' ($techDetails)';
+      }
+    }
+
+    String subtitleInfo = '';
+    final currentSubtitle = playerState.track.subtitle;
+    if (currentSubtitle.id != 'auto' && currentSubtitle.id != 'no') {
+      final lang = currentSubtitle.language?.toUpperCase();
+      final title = currentSubtitle.title;
+
+      if (title != null && title.isNotEmpty) {
+        subtitleInfo += title;
+      } else if (lang != null && lang.isNotEmpty) {
+        subtitleInfo += 'Язык: $lang';
+      } else {
+        subtitleInfo += 'Субтитры';
+      }
+    }
+
+    var fileName = "";
+    if (playerState.playlist.medias.isNotEmpty) {
+      fileName = playerState.playlist.medias[playerState.playlist.index].extras?['filename'] ?? "";
+      if (fileName.isEmpty) {
+        fileName = playerState.playlist.medias[playerState.playlist.index].uri.split('/').last;
+      }
+    }
+
+    String bufferPercentageInfo = '';
+    final totalDuration = playerState.duration.inMilliseconds;
+    final bufferedDuration = playerState.buffer.inMilliseconds;
+    if (totalDuration > 0 && bufferedDuration > 0) {
+      final realBufferPercentage = (bufferedDuration / totalDuration) * 100;
+      bufferPercentageInfo = 'Buffering: ${realBufferPercentage.toStringAsFixed(1)}%';
+    }
+
+    final List<String> infoLines = [];
+
+    final videoLine = [videoInfo, videoCodec, videoFps].where((s) => s.isNotEmpty).join(' | ');
+    if (videoLine.isNotEmpty) {
+      infoLines.add(videoLine);
+    }
+
+    if (audioInfo.isNotEmpty) {
+      infoLines.add(audioInfo);
+    }
+
+    if (subtitleInfo.isNotEmpty) {
+      infoLines.add(subtitleInfo);
+    }
+
+    if (playerState.bufferingPercentage > 0.0) {
+      infoLines.add(bufferPercentageInfo);
+    }
+
+    return AnimatedOpacity(
+      opacity: _visible ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 150),
+      child: IgnorePointer(
+        ignoring: true,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.75),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white10),
+                ),
+                constraints: const BoxConstraints(maxWidth: 450),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (fileName.isNotEmpty) ...[
+                      Text(
+                        fileName,
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Divider(color: Colors.white24, height: 16),
+                    ],
+
+                    ...infoLines.map(
+                      (line) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2.0),
+                        child: Text(
+                          line,
+                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
