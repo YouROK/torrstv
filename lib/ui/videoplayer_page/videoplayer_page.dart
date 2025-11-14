@@ -39,9 +39,7 @@ class _InternalVideoPlayerState extends ConsumerState<InternalVideoPlayer> {
   void initState() {
     super.initState();
     player = Player();
-    player.stream.log.listen((event) {
-      print('MPV [${event.level.toUpperCase()}]: ${event.text}');
-    });
+    player.stream.log.listen((event) => print('MPV [${event.level.toUpperCase()}]: ${event.text}'));
     controller = VideoController(player);
     _initializePlayer();
     _setupPositionListener();
