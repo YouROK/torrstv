@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:torrstv/core/settings/settings.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/core/utils/http.dart';
@@ -88,6 +90,45 @@ class TorrServerApi {
     final resp = await httpPost("$url/torrents", auth, body: action);
     if (resp.isSuccess) return true;
     throw Exception("Failed to list torrents");
+  }
+
+  Future<bool> addTorrentFile(String filePath, String title, String poster, String category) async {
+    final url = Uri.parse("${_settings.getTSHost()}/torrent/upload");
+    final auth = _settings.getTSAuth();
+
+    final request = http.MultipartRequest('POST', url);
+    if (auth.isNotEmpty) {
+      final b64auth = base64.encode(utf8.encode(auth));
+      request.headers['Authorization'] = 'Basic $b64auth';
+    }
+
+    final file = File(filePath);
+    if (!await file.exists()) {
+      print("Torrent file not found at path: $filePath");
+      return false;
+    }
+
+    try {
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+
+      request.fields['save'] = 'true';
+      request.fields['title'] = title;
+      request.fields['category'] = category;
+      request.fields['poster'] = poster;
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return true;
+      } else {
+        print("Failed to upload torrent file. Status: ${response.statusCode}, Body: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Error sending torrent file: $e");
+      return false;
+    }
   }
 
   Future<bool> remTorrent(String hash) async {

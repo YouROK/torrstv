@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
@@ -29,6 +30,23 @@ class _AddPageState extends ConsumerState<AddPage> {
     super.initState();
     _magnetController.addListener(_onMagnetChanged);
     _titleController.addListener(_onTitleChanged);
+  }
+
+  Future<void> _pickTorrentFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['torrent']);
+
+    if (result != null) {
+      setState(() {
+        _selectedFilePath = result.files.single.path;
+        _magnetController.clear();
+      });
+    }
+  }
+
+  void _clearSelectedFile() {
+    setState(() {
+      _selectedFilePath = null;
+    });
   }
 
   void _onMagnetChanged() {
@@ -89,9 +107,8 @@ class _AddPageState extends ConsumerState<AddPage> {
   }
 
   Future<void> _saveTorrent() async {
-    // Валидация полей
     if (_magnetController.text.isEmpty && _selectedFilePath == null) {
-      _showError('Please enter a magnet link');
+      _showError('Please enter a magnet link or select a torrent file');
       return;
     }
 
@@ -101,17 +118,20 @@ class _AddPageState extends ConsumerState<AddPage> {
 
     try {
       final api = ref.read(torrServerApiProvider);
+      var success = false;
 
       if (_magnetController.text.isNotEmpty) {
-        final success = await api.addTorrent(_magnetController.text, _titleController.text, _posterUrlController.text, _selectedCategory ?? '');
+        success = await api.addTorrent(_magnetController.text, _titleController.text, _posterUrlController.text, _selectedCategory ?? '');
+      } else if (_selectedFilePath != null) {
+        success = await api.addTorrentFile(_selectedFilePath!, _titleController.text, _posterUrlController.text, _selectedCategory ?? '');
+      }
 
-        if (success) {
-          _showSuccess('Torrent added successfully');
-          final tabController = ref.read(tabControllerProvider);
-          tabController.animateTo(0);
-        } else {
-          _showError('Error adding torrent');
-        }
+      if (success) {
+        _showSuccess('Torrent added successfully');
+        final tabController = ref.read(tabControllerProvider);
+        tabController.animateTo(0);
+      } else {
+        _showError('Error adding torrent');
       }
     } catch (e) {
       print(e);
@@ -161,6 +181,27 @@ class _AddPageState extends ConsumerState<AddPage> {
                     fillColor: colorScheme.surface.withOpacity(0.5),
                     labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
                   ),
+                ),
+
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _selectedFilePath ?? 'No file selected',
+                        style: TextStyle(
+                          color: _selectedFilePath != null ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.5),
+                          fontStyle: _selectedFilePath != null ? FontStyle.normal : FontStyle.italic,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Кнопка выбора файла
+                    IconButton(icon: const Icon(Icons.folder_open), onPressed: _isSaving ? null : _pickTorrentFile, tooltip: 'Select .torrent file'),
+                    // Кнопка очистки
+                    if (_selectedFilePath != null) IconButton(icon: const Icon(Icons.clear), onPressed: _isSaving ? null : _clearSelectedFile, tooltip: 'Clear selected file'),
+                  ],
                 ),
 
                 const SizedBox(height: 20),
