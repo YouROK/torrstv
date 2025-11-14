@@ -12,33 +12,39 @@ import 'package:torrstv/ui/torrents_page/torrent_info_page/torrent_info_provider
 import 'package:torrstv/ui/videoplayer_page/videoplayer_page.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-class TorrentInfoPage extends ConsumerWidget {
+class TorrentInfoPage extends ConsumerStatefulWidget {
   final String hash;
-  dynamic info;
-  dynamic file;
-  bool _opened = false;
-  bool is_open_player = true;
 
   TorrentInfoPage({super.key, required this.hash});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final torrentAsync = ref.watch(torrentInfoProvider(hash));
+  ConsumerState<TorrentInfoPage> createState() => _TorrentInfoPageState();
+}
+
+class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
+  dynamic _info;
+  dynamic _file;
+  bool _opened = false;
+  bool _isOpenPlayer = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final torrentAsync = ref.watch(torrentInfoProvider(widget.hash));
 
     torrentAsync.whenData((value) {
-      if (!_opened && file != null && info != null) {
+      if (!_opened && _file != null && _info != null) {
         if (value['preload_size'] != null && value['preloaded_bytes'] != null) {
           if (value['preloaded_bytes'] >= value['preload_size'] || (value['preloaded_bytes'] > 50000 && value['stat'] == 3)) {
             _opened = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (is_open_player) {
-                _openVideoPlayer(context, ref);
+              if (_isOpenPlayer) {
+                _openVideoPlayer(context);
               } else {
                 final tsUrl = ref.read(torrServerApiProvider).getTSUrl();
-                var fn = p.basename(file['path']);
+                var fn = p.basename(_file['path']);
                 if (fn.isEmpty) fn = 'DownloadTS';
 
-                final url = '$tsUrl/stream/$fn?link=${info['hash']}&index=${file['id']}&play';
+                final url = '$tsUrl/stream/$fn?link=${_info['hash']}&index=${_file['id']}&play';
                 launchUrlString(url);
               }
             });
@@ -59,18 +65,18 @@ class TorrentInfoPage extends ConsumerWidget {
               SizedBox(height: 16),
               Text('Ошибка: $error'),
               SizedBox(height: 16),
-              ElevatedButton(onPressed: () => ref.refresh(torrentInfoProvider(hash)), child: Text('Повторить')),
+              ElevatedButton(onPressed: () => ref.refresh(torrentInfoProvider(widget.hash)), child: Text('Повторить')),
             ],
           ),
         ),
         data: (torrentInfo) {
-          return _buildTorrentInfo(context, torrentInfo, ref);
+          return _buildTorrentInfo(context, torrentInfo);
         },
       ),
     );
   }
 
-  Widget _buildTorrentInfo(BuildContext context, Map<String, dynamic> info, WidgetRef ref) {
+  Widget _buildTorrentInfo(BuildContext context, Map<String, dynamic> info) {
     final colorScheme = Theme.of(context).colorScheme;
 
     int preloaded = 0;
@@ -106,7 +112,7 @@ class TorrentInfoPage extends ConsumerWidget {
                           ),
                         SizedBox(height: 8),
                         Text(
-                          'Хэш: ${hash.toUpperCase()}',
+                          'Hash: ${widget.hash.toUpperCase()}',
                           style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
                         ),
                       ],
@@ -132,7 +138,7 @@ class TorrentInfoPage extends ConsumerWidget {
                         SizedBox(height: 8),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(value: preloaded / 100.0, backgroundColor: colorScheme.onSurface.withOpacity(0.1), color: colorScheme.primary, minHeight: 8),
+                          child: LinearProgressIndicator(value: preloaded / 100.0, backgroundColor: colorScheme.onSurface.withValues(alpha: 0.1), color: colorScheme.primary, minHeight: 8),
                         ),
                         SizedBox(height: 8),
                         _buildInfoRow('Предзагрузка', '$preloaded%'),
@@ -143,7 +149,63 @@ class TorrentInfoPage extends ConsumerWidget {
               ),
 
               SizedBox(height: 16),
+              if (files.isNotEmpty)
+                Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        if (_isOpenPlayer)
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  final list = _parseFiles(info);
+                                  if (_isOpenPlayer) {
+                                    final settings = ref.read(settingsProvider);
 
+                                    final viewed = list.where((f) => settings.getViewing(widget.hash, f['id']));
+                                    if (viewed.isNotEmpty) {
+                                      _onFileTap(context, info, viewed.last);
+                                    } else {
+                                      _onFileTap(context, info, list.first);
+                                    }
+                                  }
+                                },
+                                icon: const Icon(Icons.play_arrow),
+                                label: const Text('Продолжить просмотр', textAlign: TextAlign.center),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(left: _isOpenPlayer ? 8.0 : 0.0),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                ref.read(settingsProvider).clearViewing(widget.hash);
+                              },
+                              icon: const Icon(Icons.clear_all),
+                              label: const Text('Очистить просмотр'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              SizedBox(height: 16),
               if (files.isNotEmpty)
                 Card(
                   child: Padding(
@@ -153,7 +215,7 @@ class TorrentInfoPage extends ConsumerWidget {
                       children: [
                         Text('Файлы (${files.length})', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         SizedBox(height: 12),
-                        ...files.map((file) => _buildFileItem(context, info, file, ref)),
+                        ...files.map((file) => _buildFileItem(context, info, file)),
                       ],
                     ),
                   ),
@@ -215,18 +277,18 @@ class TorrentInfoPage extends ConsumerWidget {
       files.addAll(info['file_stats']);
     }
 
-    is_open_player = true;
+    _isOpenPlayer = true;
     final videoFiles = files.where((file) => Mime.getMimeType(file['path']) == "video/*").toList();
     if (videoFiles.isNotEmpty) return videoFiles;
 
     final audioFiles = files.where((file) => Mime.getMimeType(file['path']) == "audio/*").toList();
     if (audioFiles.isNotEmpty) return audioFiles;
 
-    is_open_player = false;
+    _isOpenPlayer = false;
     return files;
   }
 
-  Widget _buildFileItem(BuildContext context, dynamic info, dynamic file, WidgetRef ref) {
+  Widget _buildFileItem(BuildContext context, dynamic info, dynamic file) {
     final String fileName = file['path']?.toString() ?? 'Неизвестный файл';
     final int fileSize = file['length'] ?? 0;
 
@@ -254,9 +316,9 @@ class TorrentInfoPage extends ConsumerWidget {
               ],
             ),
             subtitle: Text(bytesFmt(fileSize)),
-            trailing: Icon(is_open_player ? (hasProgress ? Icons.play_circle_filled : Icons.play_arrow) : Icons.download, color: Theme.of(context).colorScheme.primary),
+            trailing: Icon(_isOpenPlayer ? (hasProgress ? Icons.play_circle_filled : Icons.play_arrow) : Icons.download, color: Theme.of(context).colorScheme.primary),
             onTap: () {
-              _onFileTap(context, info, file, ref);
+              _onFileTap(context, info, file);
             },
           ),
         );
@@ -282,30 +344,30 @@ class TorrentInfoPage extends ConsumerWidget {
     }
   }
 
-  void preload(BuildContext context, dynamic info, dynamic file, WidgetRef ref) {
+  void preload(BuildContext context, dynamic info, dynamic file) {
     final torrentApi = ref.read(torrServerApiProvider);
     torrentApi.preload(info['hash'], file['id']);
   }
 
-  void _onFileTap(BuildContext context, dynamic info, dynamic file, WidgetRef ref) {
-    preload(context, info, file, ref);
-    this.file = file;
-    this.info = info;
+  void _onFileTap(BuildContext context, dynamic info, dynamic file) {
+    preload(context, info, file);
+    _file = file;
+    _info = info;
     _opened = false;
   }
 
-  void _openVideoPlayer(BuildContext context, WidgetRef ref) {
+  void _openVideoPlayer(BuildContext context) {
     final outerPlayer = ref.read(settingsProvider).getOuterPlayer();
     final outerPlayerEnabled = ref.read(settingsProvider).isOuterPlayerEnable();
     if (outerPlayerEnabled && outerPlayer.isNotEmpty) {
       final tsUrl = ref.read(torrServerApiProvider).getTSUrl();
-      final url = '$tsUrl/stream/play?link=${info['hash']}&index=${file['id']}&play';
+      final url = '$tsUrl/stream/play?link=${_info['hash']}&index=${_file['id']}&play';
       Process.start(outerPlayer.trim(), [url], mode: ProcessStartMode.detached);
     } else {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => InternalVideoPlayer(torrent: info, file: file),
+          builder: (context) => InternalVideoPlayer(torrent: _info, file: _file),
         ),
       );
     }
