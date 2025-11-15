@@ -110,11 +110,6 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Hash: ${widget.hash.toUpperCase()}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'monospace'),
-                        ),
                       ],
                     ),
                   ),
@@ -129,6 +124,7 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _buildInfoRow('Hash', widget.hash.toUpperCase()),
                       _buildInfoRow('Размер', bytesFmt(info['torrent_size'] ?? 0)),
                       _buildInfoRow('Статус', info['stat_string'] ?? 'Неизвестно'),
                       _buildInfoRow('Раздающие', '${info['connected_seeders'] ?? 0} · ${info['pending_peers'] ?? 0} / ${info['total_peers'] ?? 0}'),
@@ -175,7 +171,7 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
                                   }
                                 },
                                 icon: const Icon(Icons.play_arrow),
-                                label: const Text('Продолжить просмотр', textAlign: TextAlign.center),
+                                label: const Text('Продолжить', textAlign: TextAlign.center),
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -192,7 +188,7 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
                                 ref.read(settingsProvider).clearViewing(widget.hash);
                               },
                               icon: const Icon(Icons.clear_all),
-                              label: const Text('Очистить просмотр'),
+                              label: const Text('Очистить проигранные'),
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -311,8 +307,7 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(fileName, maxLines: 2, overflow: TextOverflow.ellipsis),
-                if (hasProgress)
-                  LinearProgressIndicator(value: progress, backgroundColor: Colors.grey[300], valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), minHeight: 1),
+                if (hasProgress) LinearProgressIndicator(value: progress, backgroundColor: Colors.grey[300], valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), minHeight: 1),
               ],
             ),
             subtitle: Text(bytesFmt(fileSize)),
