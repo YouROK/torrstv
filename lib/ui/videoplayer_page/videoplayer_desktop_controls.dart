@@ -211,10 +211,7 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
       if (explicitTrack != null) return explicitTrack;
     }
 
-    return videoTracks.cast<VideoTrack?>().firstWhere(
-      (track) => track?.id != 'auto' && track?.id != 'no' && !(track?.image ?? false) && (track?.codec != null || track?.w != null),
-      orElse: () => null,
-    );
+    return videoTracks.cast<VideoTrack?>().firstWhere((track) => track?.id != 'auto' && track?.id != 'no' && !(track?.image ?? false) && (track?.codec != null || track?.w != null), orElse: () => null);
   }
 
   Widget _buildCenterInfoOverlay() {
@@ -321,12 +318,14 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
       infoLines.add(bufferPercentageInfo);
     }
 
-    return AnimatedOpacity(
-      opacity: _visible ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 150),
-      child: IgnorePointer(
-        ignoring: true,
-        child: Center(
+    if (player.state.playing) {
+      return Container();
+    } else {
+      return AnimatedOpacity(
+        opacity: _visible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 150),
+        child: IgnorePointer(
+          ignoring: true,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -372,8 +371,8 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
             ],
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _buildControls() {
