@@ -79,17 +79,40 @@ jobs:
       - name: Build macOS Release
         run: flutter build macos --release
 
-      - name: Zip macOS build
+      - name: Install create-dmg utility (Recommended)
         run: |
-          cd build/macos/Build/Products/Release/
-          zip -r ../../../../../macos-release-${{ github.ref_name }}.zip *.app
-          cd ../../../../../
+          brew install create-dmg
 
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-release
-          path: macos-release-${{ github.ref_name }}.zip
+      - name: Create macOS DMG
+        run: |
+          APP_NAME="TorrsTV"
+          APP_PATH="build/macos/Build/Products/Release/$APP_NAME.app"
+          DMG_NAME="macos-release-${{ github.ref_name }}.dmg"
+          
+          if command -v create-dmg > /dev/null; then
+          echo "Using create-dmg"
+          create-dmg \
+           --volname "$APP_NAME Installer" \
+           --window-pos 200 120 \
+           --window-size 600 400 \
+           --icon-size 100 \
+           --hide-extension "$APP_NAME.app" \
+           --app-drop-link 450 175 \
+           --icon "$APP_NAME.app" 150 175 \
+           "$DMG_NAME" \
+           "$APP_PATH"
+          else
+          echo "Using hdiutil (basic DMG)"
+          mkdir tmp_dmg
+          cp -r "$APP_PATH" tmp_dmg/
+          hdiutil create "$DMG_NAME" -srcfolder tmp_dmg -ov -volname "$APP_NAME"
+          fi
+          
+          - name: Upload macOS artifact
+            uses: actions/upload-artifact@v4
+            with:
+              name: macos-release
+              path: macos-release-${{ github.ref_name }}.dmg
 
   release:
     name: Create GitHub Release
