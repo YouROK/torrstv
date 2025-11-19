@@ -107,12 +107,12 @@ jobs:
           cp -r "$APP_PATH" tmp_dmg/
           hdiutil create "$DMG_NAME" -srcfolder tmp_dmg -ov -volname "$APP_NAME"
           fi
-          
-          - name: Upload macOS artifact
-            uses: actions/upload-artifact@v4
-            with:
-              name: macos-release
-              path: macos-release-${{ github.ref_name }}.dmg
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: macos-release-${{ github.ref_name }}.dmg
 
   release:
     name: Create GitHub Release
