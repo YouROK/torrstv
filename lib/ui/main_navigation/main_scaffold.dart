@@ -4,6 +4,8 @@ import 'package:torrstv/core/services/torrserver/ts.dart';
 import 'package:torrstv/ui/main_navigation/tab_controller_provider.dart';
 import 'package:torrstv/ui/main_navigation/tabs.dart';
 
+import 'dpad_scope.dart';
+
 class MainScaffold extends ConsumerStatefulWidget {
   const MainScaffold({super.key});
 
@@ -42,48 +44,51 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> with SingleTickerPr
     final colorScheme = Theme.of(context).colorScheme;
     return ProviderScope(
       overrides: [tabControllerProvider.overrideWithValue(_tabController)],
-      child: Scaffold(
-        body: Column(
-          children: [
-            Container(
-              height: 100,
-              color: Colors.transparent,
-              child: Column(
-                children: [
-                  const SizedBox(height: 30),
-                  Container(
-                    height: 60,
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: TabBar(
-                      controller: _tabController,
-                      isScrollable: true,
-                      tabAlignment: TabAlignment.center,
-                      padding: EdgeInsets.all(10),
-                      indicatorColor: colorScheme.primary,
-                      dividerColor: colorScheme.primary,
-                      dividerHeight: 0.3,
-                      indicator: BoxDecoration(borderRadius: BorderRadius.circular(25), color: colorScheme.surface),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      labelColor: colorScheme.primary,
-                      overlayColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
-                        if (states.contains(WidgetState.focused) || states.contains(WidgetState.hovered)) {
-                          return Colors.transparent;
-                        }
-                        return null;
-                      }),
-                      unselectedLabelColor: colorScheme.onSurface.withAlpha(156),
-                      labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-                      tabs: _tabs,
+      child: DpadScope(
+        tabController: _tabController,
+        child: Scaffold(
+          body: Column(
+            children: [
+              Container(
+                height: 100,
+                color: Colors.transparent,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 30),
+                    Container(
+                      height: 60,
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: TabBar(
+                        controller: _tabController,
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.center,
+                        padding: EdgeInsets.all(10),
+                        indicatorColor: colorScheme.primary,
+                        dividerColor: colorScheme.primary,
+                        dividerHeight: 0.3,
+                        indicator: BoxDecoration(borderRadius: BorderRadius.circular(25), color: colorScheme.surface),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        labelColor: colorScheme.primary,
+                        // overlayColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+                        //   if (states.contains(WidgetState.focused) || states.contains(WidgetState.hovered)) {
+                        //     return Colors.transparent;
+                        //   }
+                        //   return null;
+                        // }),
+                        unselectedLabelColor: colorScheme.onSurface.withAlpha(156),
+                        labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        unselectedLabelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+                        tabs: _tabs,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: TabBarView(controller: _tabController, children: _pages),
-            ),
-          ],
+              Expanded(
+                child: TabBarView(controller: _tabController, children: _pages),
+              ),
+            ],
+          ),
         ),
       ),
     );

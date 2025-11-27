@@ -27,10 +27,15 @@ class DonatePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 30),
 
-                Text('Ваша поддержка помогает покрывать расходы на серверы, инструменты для разработки и стимулирует постоянные обновления и улучшения.', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+                Text(
+                  'Ваша поддержка помогает покрывать расходы на серверы, инструменты для разработки и стимулирует постоянные обновления и улучшения.',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 40),
 
                 ElevatedButton.icon(
+                  autofocus: true,
                   onPressed: () {
                     launchUrlString("https://boosty.to/yourok");
                   },
