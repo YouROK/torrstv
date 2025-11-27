@@ -5,6 +5,8 @@ class Settings {
 
   Settings(this._prefs);
 
+  //TS
+
   String getTSAuth() {
     return _prefs.getString("ts_auth") ?? "";
   }
@@ -25,6 +27,8 @@ class Settings {
     }
     _prefs.setString("ts_host", shost);
   }
+
+  //Player
 
   void savePosition(String hash, int id, Duration position) {
     _prefs.setDouble('position-$hash-$id', position.inSeconds.toDouble());
@@ -76,4 +80,25 @@ class Settings {
   void setOuterPlayerEnable(bool enable) async {
     _prefs.setBool('outer-player-enable', enable);
   }
+
+  // Search
+  bool isSearchSave() {
+    return _prefs.getBool('search-save-enable') ?? true;
+  }
+
+  void setSearchSaveEnable(bool enable) async {
+    _prefs.setBool('search-save-enable', enable);
+  }
+
+  String? getSearchQuery() => _prefs.getString('search-query');
+
+  void setSearchQuery(String? v) => v == null ? _prefs.remove('search-query') : _prefs.setString('search-query', v);
+
+  String? getSortField() => _prefs.getString('sort-field');
+
+  void setSortField(String? v) => v == null ? _prefs.remove('sort-field') : _prefs.setString('sort-field', v);
+
+  bool getSortOrderAscending() => _prefs.getBool('sort-order-asc') ?? true;
+
+  void setSortOrderAscending(bool v) => _prefs.setBool('sort-order-asc', v);
 }

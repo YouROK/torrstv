@@ -35,6 +35,11 @@ final _isOuterPlayerEnabledLocalProvider = StateProvider.autoDispose<bool>((ref)
   return initialValue;
 });
 
+final _isSearchSaveProvider = StateProvider.autoDispose<bool>((ref) {
+  final initialValue = ref.watch(settingsProvider.select((s) => s.isSearchSave()));
+  return initialValue;
+});
+
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -49,7 +54,10 @@ class SettingsPage extends ConsumerWidget {
     final authController = ref.watch(_authControllerProvider);
     final playerController = ref.watch(_playerControllerProvider);
     final isOuterPlayerEnabled = ref.watch(_isOuterPlayerEnabledLocalProvider);
+    final isSearchSaveEnabled = ref.watch(_isSearchSaveProvider);
+
     final isOuterPlayerEnabledNotifier = ref.read(_isOuterPlayerEnabledLocalProvider.notifier);
+    final isSearchSaveEnabledNotifier = ref.read(_isSearchSaveProvider.notifier);
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -77,6 +85,7 @@ class SettingsPage extends ConsumerWidget {
           child: ListView(
             children: [
               //Адрес ТС
+              const SizedBox(height: 20),
               TextField(
                 controller: hostController,
                 keyboardType: TextInputType.url,
@@ -114,7 +123,7 @@ class SettingsPage extends ConsumerWidget {
               ),
 
               // Выбор плеера
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
               Row(
                 children: [
                   SizedBox(width: 5),
@@ -155,6 +164,16 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
 
+              // Сохранять настройки
+              const SizedBox(height: 40),
+              SwitchListTile(
+                title: const Text('Remember search parameters'),
+                onChanged: (value) {
+                  isSearchSaveEnabledNotifier.state = value;
+                },
+                value: isSearchSaveEnabled,
+              ),
+
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: () {
@@ -163,6 +182,8 @@ class SettingsPage extends ConsumerWidget {
                   settingsNotifier.setOuterPlayer(playerController.text);
                   final newOuterPlayerEnableState = ref.read(_isOuterPlayerEnabledLocalProvider);
                   settingsNotifier.setOuterPlayerEnable(newOuterPlayerEnableState);
+                  final newSearchSaveEnableState = ref.read(_isSearchSaveProvider);
+                  settingsNotifier.setSearchSaveEnable(newSearchSaveEnableState);
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved!')));
                 },
                 icon: const Icon(Icons.save),
