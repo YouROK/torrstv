@@ -31,7 +31,19 @@ class SearchUIState {
     this.error = '',
   });
 
-  SearchUIState copyWith({bool? isLoading, String? searchQuery, List<dynamic>? allTorrents, List<dynamic>? filteredTorrents, String? sortField, bool? sortOrderAscending, String? filterQuality, String? filterVoice, String? filterSeason, String? filterTracker, String? error}) {
+  SearchUIState copyWith({
+    bool? isLoading,
+    String? searchQuery,
+    List<dynamic>? allTorrents,
+    List<dynamic>? filteredTorrents,
+    String? sortField,
+    bool? sortOrderAscending,
+    String? filterQuality,
+    String? filterVoice,
+    String? filterSeason,
+    String? filterTracker,
+    String? error,
+  }) {
     return SearchUIState(
       isLoading: isLoading ?? this.isLoading,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -56,7 +68,7 @@ class SearchUINotifier extends StateNotifier<SearchUIState> {
   Future<void> search(String query) async {
     state = state.copyWith(isLoading: true, searchQuery: query, allTorrents: [], filteredTorrents: [], error: '');
     try {
-      var link = "https://torrs.ru/search?query=$query";
+      var link = "http://torrs.ru/search?query=$query";
       final resp = await httpGetCache(link);
       final List<dynamic> torrentList = json.decode(resp.data ?? '[]');
       state = state.copyWith(allTorrents: torrentList, isLoading: false);
