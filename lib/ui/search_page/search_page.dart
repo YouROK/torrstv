@@ -1,34 +1,91 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
+import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/ui/main_navigation/tab_controller_provider.dart';
 import 'package:torrstv/ui/search_page/search_card.dart';
 import 'package:torrstv/ui/search_page/search_provider.dart';
 
-class SearchPage extends ConsumerWidget {
-  SearchPage({super.key});
-
-  final TextEditingController _textController = TextEditingController();
-
-  final List<Widget> torrentsSort = <Widget>[const Text('By Peers'), const Text('By Size'), const Text('By Date')];
-  final List<String> sortFields = ['peers', 'size', 'date'];
+class SearchPage extends ConsumerStatefulWidget {
+  const SearchPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
+  ConsumerState<SearchPage> createState() => _SearchPageState();
+}
 
-    final state = ref.watch(torrsSearchProvider);
+class _SearchPageState extends ConsumerState<SearchPage> {
+  late TextEditingController _textController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final settings = ref.read(settingsProvider);
     final notifier = ref.read(torrsSearchProvider.notifier);
 
-    final qualityOptions = ref.watch(qualityOptionsProvider);
-    final voiceOptions = ref.watch(voiceOptionsProvider);
-    final seasonOptions = ref.watch(seasonOptionsProvider);
-    final trackerOptions = ref.watch(trackerOptionsProvider);
+    // создаём контроллер сразу
+    _textController = TextEditingController();
 
-    if (_textController.text.isEmpty) {
+    // восстанавливаем параметры, только если разрешено
+    if (settings.isSearchSave()) {
+      final q = settings.getSearchQuery() ?? '';
+      final field = settings.getSortField() ?? 'size';
+      final asc = settings.getSortOrderAscending();
+
+      _textController.text = q;
+
+      // откладываем изменения провайдера на момент, когда дерево уже построено
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // 1. сортировка
+        notifier.setSortField(field);
+        if (notifier.state.sortOrderAscending != asc) {
+          notifier.toggleSortOrder();
+        }
+        // 2. поиск (если был сохранённый запрос)
+        if (q.isNotEmpty) notifier.search(q);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _saveSearchParams() {
+    final settings = ref.read(settingsProvider);
+    settings.setSearchQuery(_textController.text.trim());
+    settings.setSortField(ref.read(torrsSearchProvider).sortField);
+    settings.setSortOrderAscending(ref.read(torrsSearchProvider).sortOrderAscending);
+  }
+
+  void _onSearch(String query) {
+    ref.read(torrsSearchProvider.notifier).search(query);
+    _saveSearchParams();
+  }
+
+  void _onSortChanged(String field) {
+    ref.read(torrsSearchProvider.notifier).setSortField(field);
+    _saveSearchParams();
+  }
+
+  void _onToggleOrder() {
+    ref.read(torrsSearchProvider.notifier).toggleSortOrder();
+    _saveSearchParams();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final state = ref.watch(torrsSearchProvider);
+
+    if (_textController.text != state.searchQuery && _textController.text.isEmpty && state.searchQuery.isNotEmpty) {
       _textController.text = state.searchQuery;
     }
 
+    final List<Widget> torrentsSort = <Widget>[const Text('By Peers'), const Text('By Size'), const Text('By Date')];
+    final List<String> sortFields = ['peers', 'size', 'date'];
     final int selectedSortIndex = sortFields.indexOf(state.sortField);
     final List<dynamic> torrentsToDisplay = state.filteredTorrents;
 
@@ -56,18 +113,12 @@ class SearchPage extends ConsumerWidget {
                 backgroundColor: Colors.green[800],
                 shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
               ),
+              onPressed: state.isLoading ? null : () => _onSearch(_textController.text.trim()),
               child: SizedBox(height: 20, width: 20, child: state.isLoading ? const CircularProgressIndicator() : const Icon(Icons.search)),
-              onPressed: () {
-                if (!state.isLoading) {
-                  notifier.search(_textController.text);
-                }
-              },
             ),
           ),
         ),
-        onSubmitted: (String query) {
-          notifier.search(query);
-        },
+        onSubmitted: _onSearch,
       ),
       // Сортировка
       Padding(
@@ -77,9 +128,7 @@ class SearchPage extends ConsumerWidget {
           children: [
             ToggleButtons(
               direction: Axis.horizontal,
-              onPressed: (int index) {
-                notifier.setSortField(sortFields[index]);
-              },
+              onPressed: (i) => _onSortChanged(sortFields[i]),
               borderRadius: const BorderRadius.all(Radius.circular(8)),
               selectedBorderColor: Colors.blue[700],
               selectedColor: Colors.black,
@@ -94,9 +143,7 @@ class SearchPage extends ConsumerWidget {
               message: state.sortOrderAscending ? 'From largest to smallest' : 'From smallest to largest',
               child: ToggleButtons(
                 direction: Axis.horizontal,
-                onPressed: (int index) {
-                  notifier.toggleSortOrder();
-                },
+                onPressed: (_) => _onToggleOrder(),
                 borderRadius: const BorderRadius.all(Radius.circular(8)),
                 fillColor: Colors.transparent,
                 color: Colors.blue[400],
@@ -117,69 +164,10 @@ class SearchPage extends ConsumerWidget {
           spacing: 10,
           runSpacing: 10,
           children: [
-            // 2. Фильтр "Качество"
-            SizedBox(
-              width: 150,
-              child: DropdownButtonFormField<String>(
-                decoration: const InputDecoration(filled: true, labelText: 'Quality'),
-                initialValue: state.filterQuality,
-                icon: const Icon(Icons.arrow_downward),
-                onChanged: (String? value) {
-                  notifier.setQuality(value ?? "Все");
-                },
-                items: qualityOptions.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
-                }).toList(),
-              ),
-            ),
-
-            // 3. Фильтр "Озвучка"
-            SizedBox(
-              width: 240,
-              child: DropdownButtonFormField<String>(
-                decoration: const InputDecoration(filled: true, labelText: 'Voice'),
-                initialValue: state.filterVoice,
-                icon: const Icon(Icons.arrow_downward),
-                onChanged: (String? value) {
-                  notifier.setVoice(value ?? "Все");
-                },
-                items: voiceOptions.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
-                }).toList(),
-              ),
-            ),
-
-            // 4. Фильтр "Сезоны"
-            SizedBox(
-              width: 150,
-              child: DropdownButtonFormField<String>(
-                decoration: const InputDecoration(filled: true, labelText: 'Seasons'),
-                initialValue: state.filterSeason,
-                icon: const Icon(Icons.arrow_downward),
-                onChanged: (String? value) {
-                  notifier.setSeason(value ?? "Все");
-                },
-                items: seasonOptions.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
-                }).toList(),
-              ),
-            ),
-
-            // 5. Фильтр "Трекер"
-            SizedBox(
-              width: 150,
-              child: DropdownButtonFormField<String>(
-                decoration: const InputDecoration(filled: true, labelText: 'Tracker'),
-                initialValue: state.filterTracker,
-                icon: const Icon(Icons.arrow_downward),
-                onChanged: (String? value) {
-                  notifier.setTracker(value ?? "Все");
-                },
-                items: trackerOptions.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(value: value, child: Text(value));
-                }).toList(),
-              ),
-            ),
+            _filterDrop('Quality', state.filterQuality, 150, ref.read(qualityOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setQuality(v ?? 'All')),
+            _filterDrop('Voice', state.filterVoice, 240, ref.read(voiceOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setVoice(v ?? 'All')),
+            _filterDrop('Seasons', state.filterSeason, 150, ref.read(seasonOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setSeason(v ?? 'All')),
+            _filterDrop('Tracker', state.filterTracker, 150, ref.read(trackerOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setTracker(v ?? 'All')),
           ],
         ),
       ),
@@ -243,4 +231,14 @@ class SearchPage extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _filterDrop(String label, String value, double width, List<String> items, ValueChanged<String?> onChanged) => SizedBox(
+    width: width,
+    child: DropdownButtonFormField<String>(
+      decoration: InputDecoration(filled: true, labelText: label),
+      value: value,
+      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      onChanged: onChanged,
+    ),
+  );
 }
