@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
+import 'package:torrstv/l10n/localizations_mixin.dart';
 import 'package:torrstv/ui/main_navigation/tab_controller_provider.dart';
 import 'package:torrstv/ui/search_page/search_card.dart';
 import 'package:torrstv/ui/search_page/search_provider.dart';
@@ -14,7 +15,7 @@ class SearchPage extends ConsumerStatefulWidget {
   ConsumerState<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends ConsumerState<SearchPage> {
+class _SearchPageState extends ConsumerState<SearchPage> with LocalizedState<SearchPage> {
   late TextEditingController _textController;
 
   @override
@@ -24,10 +25,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     final settings = ref.read(settingsProvider);
     final notifier = ref.read(torrsSearchProvider.notifier);
 
-    // создаём контроллер сразу
     _textController = TextEditingController();
 
-    // восстанавливаем параметры, только если разрешено
     if (settings.isSearchSave()) {
       final q = settings.getSearchQuery() ?? '';
       final field = settings.getSortField() ?? 'size';
@@ -35,14 +34,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
 
       _textController.text = q;
 
-      // откладываем изменения провайдера на момент, когда дерево уже построено
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // 1. сортировка
         notifier.setSortField(field);
         if (notifier.state.sortOrderAscending != asc) {
           notifier.toggleSortOrder();
         }
-        // 2. поиск (если был сохранённый запрос)
         if (q.isNotEmpty) notifier.search(q);
       });
     }
@@ -85,21 +81,19 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       _textController.text = state.searchQuery;
     }
 
-    final List<Widget> torrentsSort = <Widget>[const Text('By Peers'), const Text('By Size'), const Text('By Date')];
+    final List<Widget> torrentsSort = <Widget>[Text(l10n.sortByPeers), Text(l10n.sortBySize), Text(l10n.sortByDate)];
     final List<String> sortFields = ['peers', 'size', 'date'];
     final int selectedSortIndex = sortFields.indexOf(state.sortField);
     final List<dynamic> torrentsToDisplay = state.filteredTorrents;
 
-    // --- Статические виджеты (поиск, сортировка, фильтры) ---
     final List<Widget> staticHeaderWidgets = [
       const SizedBox(height: 5),
-      // Поле ввода
       DpadTextField(
         controller: _textController,
         style: TextStyle(color: colorScheme.onSurface),
         decoration: InputDecoration(
-          labelText: 'Enter a name',
-          hintText: 'Venom 2018, Terminator 2, etc...',
+          labelText: l10n.searchEnterName,
+          hintText: "Venom 2018, Terminator 2, etc...",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: colorScheme.primary),
@@ -121,7 +115,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         ),
         onSubmitted: _onSearch,
       ),
-      // Сортировка
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 30.0),
         child: Row(
@@ -141,7 +134,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             ),
             const SizedBox(width: 10),
             Tooltip(
-              message: state.sortOrderAscending ? 'From largest to smallest' : 'From smallest to largest',
+              message: state.sortOrderAscending ? l10n.sortTooltipDesc : l10n.sortTooltipAsc,
               child: ToggleButtons(
                 direction: Axis.horizontal,
                 onPressed: (_) => _onToggleOrder(),
@@ -156,8 +149,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           ],
         ),
       ),
-
-      // Фильтры
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 30.0),
         child: Wrap(
@@ -165,10 +156,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           spacing: 10,
           runSpacing: 10,
           children: [
-            _filterDrop('Quality', state.filterQuality, 150, ref.read(qualityOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setQuality(v ?? 'All')),
-            _filterDrop('Voice', state.filterVoice, 240, ref.read(voiceOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setVoice(v ?? 'All')),
-            _filterDrop('Seasons', state.filterSeason, 150, ref.read(seasonOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setSeason(v ?? 'All')),
-            _filterDrop('Tracker', state.filterTracker, 150, ref.read(trackerOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setTracker(v ?? 'All')),
+            _filterDrop(l10n.filterQuality, state.filterQuality, 150, ref.read(qualityOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setQuality(v ?? 'All')),
+            _filterDrop(l10n.filterVoice, state.filterVoice, 240, ref.read(voiceOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setVoice(v ?? 'All')),
+            _filterDrop(l10n.filterSeasons, state.filterSeason, 150, ref.read(seasonOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setSeason(v ?? 'All')),
+            _filterDrop(l10n.filterTracker, state.filterTracker, 150, ref.read(trackerOptionsProvider), (v) => ref.read(torrsSearchProvider.notifier).setTracker(v ?? 'All')),
           ],
         ),
       ),
@@ -185,7 +176,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             SliverToBoxAdapter(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: staticHeaderWidgets),
             ),
-
             if (state.isLoading)
               const SliverToBoxAdapter(
                 child: Center(
@@ -195,12 +185,12 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             else if (torrentsToDisplay.isEmpty && state.searchQuery.isNotEmpty)
               SliverToBoxAdapter(
                 child: Center(
-                  child: Padding(padding: EdgeInsets.all(30), child: Text('By query "${state.searchQuery}" not found.')),
+                  child: Padding(padding: const EdgeInsets.all(30), child: Text(l10n.noResultsFound(state.searchQuery))),
                 ),
               )
             else ...[
               SliverToBoxAdapter(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [Text("Torrents: ${torrentsToDisplay.length}"), const SizedBox(height: 10)]),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [Text(l10n.torrentsCount(torrentsToDisplay.length.toString())), const SizedBox(height: 10)]),
               ),
               SliverList.builder(
                 itemCount: torrentsToDisplay.length,
@@ -216,7 +206,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                           final tabController = ref.read(tabControllerProvider);
                           tabController.animateTo(0);
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error adding torrent'), backgroundColor: Colors.red));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errorAddingTorrent), backgroundColor: Colors.red));
                         }
                       } catch (e) {
                         print(e);

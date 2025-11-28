@@ -7,6 +7,7 @@ import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/services/torrserver/ts.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/core/utils/platform_utils.dart';
+import 'package:torrstv/l10n/app_localizations.dart';
 import 'package:torrstv/ui/settings_page/download_dialog/dl_ts.dart';
 import 'package:torrstv/ui/widgets/dpad_text_field.dart';
 
@@ -50,6 +51,7 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final settingsNotifier = ref.read(settingsProvider);
     final hostController = ref.watch(_hostControllerProvider);
     final authController = ref.watch(_authControllerProvider);
@@ -77,7 +79,7 @@ class SettingsPage extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings'), backgroundColor: colorScheme.surface, elevation: 0),
+      appBar: AppBar(title: Text(l10n.settingsTitle), backgroundColor: colorScheme.surface, elevation: 0),
       body: Container(
         padding: const EdgeInsets.all(24),
         alignment: Alignment.topCenter,
@@ -85,15 +87,15 @@ class SettingsPage extends ConsumerWidget {
           constraints: const BoxConstraints(maxWidth: 800),
           child: ListView(
             children: [
-              //Адрес ТС
+              // Адрес ТС
               const SizedBox(height: 20),
               DpadTextField(
                 controller: hostController,
                 keyboardType: TextInputType.url,
                 style: TextStyle(color: colorScheme.onSurface),
                 decoration: InputDecoration(
-                  labelText: 'Address of TorrServer (http://<host>:<port>)',
-                  hintText: 'http://127.0.0.1:8090',
+                  labelText: l10n.tsAddressLabel,
+                  hintText: "http://127.0.0.1:8090",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: colorScheme.primary),
@@ -104,15 +106,15 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
 
-              //Аутентификация
+              // Аутентификация
               const SizedBox(height: 20),
               DpadTextField(
                 controller: authController,
                 keyboardType: TextInputType.url,
                 style: TextStyle(color: colorScheme.onSurface),
                 decoration: InputDecoration(
-                  labelText: 'Auth of TorrServer (username:password)',
-                  hintText: 'username:password',
+                  labelText: l10n.tsAuthLabel,
+                  hintText: l10n.tsAuthHint,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: colorScheme.primary),
@@ -144,8 +146,8 @@ class SettingsPage extends ConsumerWidget {
                       keyboardType: TextInputType.url,
                       style: TextStyle(color: colorScheme.onSurface),
                       decoration: InputDecoration(
-                        labelText: 'Select a player',
-                        hintText: 'vlc, mpv, etc...',
+                        labelText: l10n.selectPlayerLabel,
+                        hintText: l10n.selectPlayerHint,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(color: colorScheme.primary),
@@ -168,7 +170,7 @@ class SettingsPage extends ConsumerWidget {
               // Сохранять настройки
               const SizedBox(height: 40),
               SwitchListTile(
-                title: const Text('Remember search parameters'),
+                title: Text(l10n.rememberSearchParams),
                 onChanged: (value) {
                   isSearchSaveEnabledNotifier.state = value;
                 },
@@ -185,10 +187,10 @@ class SettingsPage extends ConsumerWidget {
                   settingsNotifier.setOuterPlayerEnable(newOuterPlayerEnableState);
                   final newSearchSaveEnableState = ref.read(_isSearchSaveProvider);
                   settingsNotifier.setSearchSaveEnable(newSearchSaveEnableState);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved!')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.settingsSaved)));
                 },
                 icon: const Icon(Icons.save),
-                label: const Text('Save'),
+                label: Text(l10n.saveSettings),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -205,7 +207,7 @@ class SettingsPage extends ConsumerWidget {
                     startDownloadDialog(context, ref);
                   },
                   icon: const Icon(Icons.download, size: 24),
-                  label: const Text('Download TorrServer', style: TextStyle(fontSize: 16)),
+                  label: Text(l10n.downloadTorrServerButton, style: const TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade800,
                     foregroundColor: Colors.white,
@@ -227,7 +229,7 @@ class SettingsPage extends ConsumerWidget {
                     }
                   },
                   icon: const Icon(Icons.play_arrow, size: 24),
-                  label: const Text('Start TorrServer', style: TextStyle(fontSize: 16)),
+                  label: Text(l10n.startTorrServerButton, style: const TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade800,
                     foregroundColor: Colors.white,
@@ -242,7 +244,7 @@ class SettingsPage extends ConsumerWidget {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('TorrServer send stoping...')));
                   },
                   icon: const Icon(Icons.stop, size: 24),
-                  label: const Text('Stop TorrServer', style: TextStyle(fontSize: 16)),
+                  label: Text(l10n.stopTorrServerButton, style: const TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade800,
                     foregroundColor: Colors.white,
@@ -264,8 +266,8 @@ class SettingsPage extends ConsumerWidget {
                         style: TextStyle(color: colorScheme.primary),
                         textAlign: TextAlign.center,
                       ),
-                      loading: () => const Text('TorrsTV Loading...'),
-                      error: (error, stack) => Text('TorrsTV Error: $error'),
+                      loading: () => Text(l10n.torrstvLoading),
+                      error: (error, stack) => Text(l10n.torrstvError(error.toString())),
                     ),
               ),
             ],

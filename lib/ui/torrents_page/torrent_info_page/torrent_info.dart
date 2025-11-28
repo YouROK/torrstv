@@ -7,6 +7,8 @@ import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/settings/settings.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/core/utils/bytes.dart';
+import 'package:torrstv/l10n/app_localizations.dart';
+import 'package:torrstv/l10n/localizations_mixin.dart';
 import 'package:torrstv/ui/torrents_page/torrent_info_page/mime.dart';
 import 'package:torrstv/ui/torrents_page/torrent_info_page/torrent_info_provider.dart';
 import 'package:torrstv/ui/videoplayer_page/videoplayer_page.dart';
@@ -21,7 +23,7 @@ class TorrentInfoPage extends ConsumerStatefulWidget {
   ConsumerState<TorrentInfoPage> createState() => _TorrentInfoPageState();
 }
 
-class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
+class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> with LocalizedState<TorrentInfoPage> {
   dynamic _info;
   dynamic _file;
   bool _opened = false;
@@ -54,7 +56,7 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: Text('Информация о торренте')),
+      appBar: AppBar(title: Text(l10n.torrentInfoTitle)),
       body: torrentAsync.when(
         loading: () => Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
@@ -63,20 +65,20 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
             children: [
               Icon(Icons.error, size: 64, color: Colors.red),
               SizedBox(height: 16),
-              Text('Ошибка: $error'),
+              Text(l10n.errorLabel(error.toString())),
               SizedBox(height: 16),
-              ElevatedButton(onPressed: () => ref.refresh(torrentInfoProvider(widget.hash)), child: Text('Повторить')),
+              ElevatedButton(onPressed: () => ref.refresh(torrentInfoProvider(widget.hash)), child: Text(l10n.retryButton)),
             ],
           ),
         ),
         data: (torrentInfo) {
-          return _buildTorrentInfo(context, torrentInfo);
+          return _buildTorrentInfo(context, torrentInfo, l10n);
         },
       ),
     );
   }
 
-  Widget _buildTorrentInfo(BuildContext context, Map<String, dynamic> info) {
+  Widget _buildTorrentInfo(BuildContext context, Map<String, dynamic> info, AppLocalizations l10n) {
     final colorScheme = Theme.of(context).colorScheme;
 
     int preloaded = 0;
@@ -124,11 +126,11 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow('Hash', widget.hash.toUpperCase()),
-                      _buildInfoRow('Размер', bytesFmt(info['torrent_size'] ?? 0)),
-                      _buildInfoRow('Статус', info['stat_string'] ?? 'Неизвестно'),
-                      _buildInfoRow('Раздающие', '${info['connected_seeders'] ?? 0} · ${info['pending_peers'] ?? 0} / ${info['total_peers'] ?? 0}'),
-                      _buildInfoRow('Скорость', speedFmt(info['download_speed'] ?? 0)),
+                      _buildInfoRow(l10n.hashLabel, widget.hash.toUpperCase(), colorScheme),
+                      _buildInfoRow(l10n.sizeLabel, bytesFmt(info['torrent_size'] ?? 0), colorScheme),
+                      _buildInfoRow(l10n.statusLabel, info['stat_string'] ?? l10n.torrentStatusUnknown, colorScheme),
+                      _buildInfoRow(l10n.seedersLabel, '${info['connected_seeders'] ?? 0} · ${info['pending_peers'] ?? 0} / ${info['total_peers'] ?? 0}', colorScheme),
+                      _buildInfoRow(l10n.speedLabel, speedFmt(info['download_speed'] ?? 0), colorScheme),
 
                       if (info['stat'] == 2 && info['preload_size'] != null && info['preloaded_bytes'] != null) ...[
                         SizedBox(height: 8),
@@ -137,7 +139,7 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
                           child: LinearProgressIndicator(value: preloaded / 100.0, backgroundColor: colorScheme.onSurface.withValues(alpha: 0.1), color: colorScheme.primary, minHeight: 8),
                         ),
                         SizedBox(height: 8),
-                        _buildInfoRow('Предзагрузка', '$preloaded%'),
+                        _buildInfoRow(l10n.preloadLabel, '$preloaded%', colorScheme),
                       ],
                     ],
                   ),
@@ -145,40 +147,37 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
               ),
 
               SizedBox(height: 16),
-              if (files.isNotEmpty)
+              if (files.isNotEmpty && _isOpenPlayer)
                 Card(
                   child: Padding(
                     padding: EdgeInsets.all(16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        if (_isOpenPlayer)
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  final list = _parseFiles(info);
-                                  if (_isOpenPlayer) {
-                                    final settings = ref.read(settingsProvider);
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                final list = _parseFiles(info);
+                                final settings = ref.read(settingsProvider);
 
-                                    final viewed = list.where((f) => settings.getViewing(widget.hash, f['id']));
-                                    if (viewed.isNotEmpty) {
-                                      _onFileTap(context, info, viewed.last);
-                                    } else {
-                                      _onFileTap(context, info, list.first);
-                                    }
-                                  }
-                                },
-                                icon: const Icon(Icons.play_arrow),
-                                label: const Text('Продолжить', textAlign: TextAlign.center),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
+                                final viewed = list.where((f) => settings.getViewing(widget.hash, f['id']));
+                                if (viewed.isNotEmpty) {
+                                  _onFileTap(context, info, viewed.last);
+                                } else {
+                                  _onFileTap(context, info, list.first);
+                                }
+                              },
+                              icon: const Icon(Icons.play_arrow),
+                              label: Text(l10n.continueButton, textAlign: TextAlign.center),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
                           ),
+                        ),
 
                         Expanded(
                           child: Padding(
@@ -188,7 +187,7 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
                                 ref.read(settingsProvider).clearViewing(widget.hash);
                               },
                               icon: const Icon(Icons.clear_all),
-                              label: const Text('Очистить проигранные'),
+                              label: Text(l10n.clearViewedButton),
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -209,9 +208,9 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Файлы (${files.length})', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(l10n.filesTitle(files.length.toString()), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         SizedBox(height: 12),
-                        ...files.map((file) => _buildFileItem(context, info, file)),
+                        ...files.map((file) => _buildFileItem(context, info, file, l10n)),
                       ],
                     ),
                   ),
@@ -223,7 +222,7 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, ColorScheme colorScheme) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -284,8 +283,8 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
     return files;
   }
 
-  Widget _buildFileItem(BuildContext context, dynamic info, dynamic file) {
-    final String fileName = file['path']?.toString() ?? 'Неизвестный файл';
+  Widget _buildFileItem(BuildContext context, dynamic info, dynamic file, AppLocalizations l10n) {
+    final String fileName = file['path']?.toString() ?? l10n.unknownFile;
     final int fileSize = file['length'] ?? 0;
 
     final settings = ref.read(settingsProvider);
@@ -307,7 +306,8 @@ class _TorrentInfoPageState extends ConsumerState<TorrentInfoPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(fileName, maxLines: 2, overflow: TextOverflow.ellipsis),
-                if (hasProgress) LinearProgressIndicator(value: progress, backgroundColor: Colors.grey[300], valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), minHeight: 1),
+                if (hasProgress)
+                  LinearProgressIndicator(value: progress, backgroundColor: Colors.grey[300], valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), minHeight: 1),
               ],
             ),
             subtitle: Text(bytesFmt(fileSize)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:torrstv/l10n/app_localizations.dart';
 import 'package:torrstv/ui/add_page/add_page.dart';
 import 'package:torrstv/ui/donate_page/donate_page.dart';
 import 'package:torrstv/ui/search_page/search_page.dart';
@@ -6,26 +7,18 @@ import 'package:torrstv/ui/settings_page/settings_page.dart';
 import 'package:torrstv/ui/torrents_page/torrents_page.dart';
 import 'package:torrstv/ui/torrserver_page/torrserver_page.dart';
 
-class TabItem {
-  final String label;
-  final Widget page;
+class TabItemDef {
+  final String Function(BuildContext context) labelBuilder;
+  final Widget Function(BuildContext context) pageBuilder;
 
-  const TabItem({required this.label, required this.page});
+  const TabItemDef({required this.labelBuilder, required this.pageBuilder});
 }
 
-class TabsConfiguration {
-  static List<TabItem> items = [
-    TabItem(label: 'Torrents', page: TorrentPage()),
-    TabItem(label: 'Add', page: AddPage()),
-    TabItem(label: 'Search', page: SearchPage()),
-    TabItem(label: 'Donate', page: DonatePage()),
-    TabItem(label: 'TorrServer', page: TorrServerPage()),
-    TabItem(label: 'Settings', page: SettingsPage()),
-  ];
-
-  static List<Tab> get tabWidgets => items.map((item) => Tab(text: item.label, height: 50)).toList();
-
-  static List<Widget> get pageWidgets => items.map((item) => item.page).toList();
-
-  static int get length => items.length;
-}
+final List<TabItemDef> tabDefinitions = [
+  TabItemDef(labelBuilder: (context) => AppLocalizations.of(context)!.torrents, pageBuilder: (context) => const TorrentPage()),
+  TabItemDef(labelBuilder: (context) => AppLocalizations.of(context)!.add, pageBuilder: (context) => const AddPage()),
+  TabItemDef(labelBuilder: (context) => AppLocalizations.of(context)!.search, pageBuilder: (context) => const SearchPage()),
+  TabItemDef(labelBuilder: (context) => AppLocalizations.of(context)!.donate, pageBuilder: (context) => const DonatePage()),
+  TabItemDef(labelBuilder: (context) => AppLocalizations.of(context)!.torrServer, pageBuilder: (context) => const TorrServerPage()),
+  TabItemDef(labelBuilder: (context) => AppLocalizations.of(context)!.settings, pageBuilder: (context) => const SettingsPage()),
+];

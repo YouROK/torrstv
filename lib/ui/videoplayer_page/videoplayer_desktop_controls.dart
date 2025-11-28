@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
+import 'package:torrstv/l10n/app_localizations.dart';
 import 'package:torrstv/ui/videoplayer_page/videoplayer_settings_page/videoplayer_settings_page.dart';
 
 class VideoPlayerDesktopControls extends ConsumerStatefulWidget {
@@ -170,6 +171,7 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return MouseRegion(
       onHover: (_) => _onHover(),
       onEnter: (_) => _onEnter(),
@@ -181,7 +183,7 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
             right: 0,
             top: 60,
             bottom: 100,
-            child: GestureDetector(onTap: _onVideoTap, behavior: HitTestBehavior.opaque, child: _buildCenterInfoOverlay()),
+            child: GestureDetector(onTap: _onVideoTap, behavior: HitTestBehavior.opaque, child: _buildCenterInfoOverlay(l10n)),
           ),
           Positioned(
             left: 0,
@@ -200,11 +202,11 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                   });
                 }
               },
-              child: _mount ? _buildControls() : const SizedBox.shrink(),
+              child: _mount ? _buildControls(l10n) : const SizedBox.shrink(),
             ),
           ),
-          if (_showAudioTracks) _buildAudioTracksOverlay(),
-          if (_showSubtitleTracks) _buildSubtitleTracksOverlay(),
+          if (_showAudioTracks) _buildAudioTracksOverlay(l10n),
+          if (_showSubtitleTracks) _buildSubtitleTracksOverlay(l10n),
           if (_showPlayPauseAnimation) _buildPlayPauseAnimation(),
         ],
       ),
@@ -215,7 +217,7 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
     final isPlaying = widget.state.widget.controller.player.state.playing;
     return Positioned.fill(
       child: Center(
-        child: SizedBox(width: 100, height: 100, child: Icon(isPlaying ? Icons.play_arrow : Icons.pause, color: Colors.white, size: 50)),
+        child: SizedBox(width: 100, height: 100, child: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 50)),
       ),
     );
   }
@@ -235,60 +237,64 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
     );
   }
 
-  Widget _buildCenterInfoOverlay() {
+  Widget _buildCenterInfoOverlay(AppLocalizations l10n) {
     final player = widget.state.widget.controller.player;
     final playerState = player.state;
 
-    String videoInfo = '';
-    String videoCodec = '';
-    String videoFps = '';
+    List<String> infoLines = [];
 
+    // --- Video info ---
+    String videoLine = '';
     final activeVideoTrack = _findActiveVideoTrackDetails(player);
-
     if (activeVideoTrack != null) {
       final width = activeVideoTrack.w ?? playerState.width;
       final height = activeVideoTrack.h ?? playerState.height;
-
       if (width != null && height != null && width > 0 && height > 0) {
-        videoInfo = '${width}x${height}';
+        videoLine = '$width x $height';
       }
 
       if (activeVideoTrack.codec != null && activeVideoTrack.codec!.isNotEmpty) {
-        videoCodec = activeVideoTrack.codec!.toUpperCase();
+        videoLine += ' | ${activeVideoTrack.codec!.toUpperCase()}';
       }
 
       if (activeVideoTrack.fps != null && activeVideoTrack.fps! > 0) {
-        videoFps = '${activeVideoTrack.fps!.round()} FPS';
+        videoLine += ' | ${activeVideoTrack.fps!.round()} FPS';
       }
     }
+    if (videoLine.isNotEmpty) infoLines.add(videoLine);
 
+    // --- Audio info ---
     String audioInfo = '';
     final currentAudio = playerState.track.audio;
     if (currentAudio.id != 'auto' && currentAudio.id != 'no') {
       final lang = currentAudio.language?.toUpperCase() ?? '';
       final title = currentAudio.title;
 
+      if (title != null && title.isNotEmpty) {
+        audioInfo = title;
+      } else if (lang.isNotEmpty) {
+        audioInfo = lang;
+      } else {
+        audioInfo = l10n.unknownAudio(currentAudio.id);
+      }
+
+      // Technical details
       String codec = currentAudio.codec?.toUpperCase() ?? '';
-      String channels = _getChannels(currentAudio.channelscount ?? playerState.audioParams.channelCount ?? 0);
+      int channelsCount = currentAudio.channelscount ?? playerState.audioParams.channelCount ?? 0;
+      String channels = _formatChannels(channelsCount, l10n);
       String bitrate = '';
       if (playerState.audioBitrate != null && playerState.audioBitrate! > 0) {
         bitrate = '${(playerState.audioBitrate! / 1000).round()} kbps';
-      }
-
-      if (title != null && title.isNotEmpty) {
-        audioInfo += title;
-      } else if (lang.isNotEmpty) {
-        audioInfo += lang;
-      } else {
-        audioInfo += 'Аудио';
       }
 
       String techDetails = [codec, channels, bitrate].where((s) => s.isNotEmpty).join(', ');
       if (techDetails.isNotEmpty) {
         audioInfo += ' ($techDetails)';
       }
+      infoLines.add(audioInfo);
     }
 
+    // --- Subtitle info ---
     String subtitleInfo = '';
     final currentSubtitle = playerState.track.subtitle;
     if (currentSubtitle.id != 'auto' && currentSubtitle.id != 'no') {
@@ -296,47 +302,30 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
       final title = currentSubtitle.title;
 
       if (title != null && title.isNotEmpty) {
-        subtitleInfo += title;
+        subtitleInfo = title;
       } else if (lang != null && lang.isNotEmpty) {
-        subtitleInfo += 'Язык: $lang';
+        subtitleInfo = 'Lang: $lang';
       } else {
-        subtitleInfo += 'Субтитры';
+        subtitleInfo = l10n.unknownSubtitles(currentSubtitle.id);
       }
-    }
-
-    var fileName = "";
-    if (playerState.playlist.medias.isNotEmpty) {
-      fileName = playerState.playlist.medias[playerState.playlist.index].extras?['filename'] ?? "";
-      if (fileName.isEmpty) {
-        fileName = playerState.playlist.medias[playerState.playlist.index].uri.split('/').last;
-      }
-    }
-
-    String bufferPercentageInfo = '';
-    final totalDuration = playerState.duration.inMilliseconds;
-    final bufferedDuration = playerState.buffer.inMilliseconds;
-    if (totalDuration > 0 && bufferedDuration > 0) {
-      final realBufferPercentage = (bufferedDuration / totalDuration) * 100;
-      bufferPercentageInfo = 'Buffering: ${realBufferPercentage.toStringAsFixed(1)}%';
-    }
-
-    final List<String> infoLines = [];
-
-    final videoLine = [videoInfo, videoCodec, videoFps].where((s) => s.isNotEmpty).join(' | ');
-    if (videoLine.isNotEmpty) {
-      infoLines.add(videoLine);
-    }
-
-    if (audioInfo.isNotEmpty) {
-      infoLines.add(audioInfo);
-    }
-
-    if (subtitleInfo.isNotEmpty) {
       infoLines.add(subtitleInfo);
     }
 
+    // --- Buffering ---
     if (playerState.bufferingPercentage > 0.0) {
-      infoLines.add(bufferPercentageInfo);
+      final total = playerState.duration.inMilliseconds;
+      final buffered = playerState.buffer.inMilliseconds;
+      if (total > 0 && buffered > 0) {
+        final pct = (buffered / total) * 100;
+        infoLines.add(l10n.buffering(pct.toStringAsFixed(1)));
+      }
+    }
+
+    // --- Filename ---
+    String fileName = '';
+    if (playerState.playlist.medias.isNotEmpty) {
+      final media = playerState.playlist.medias[playerState.playlist.index];
+      fileName = media.extras?['filename'] ?? media.uri.split('/').last;
     }
 
     if (player.state.playing) {
@@ -373,7 +362,6 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                       ),
                       const Divider(color: Colors.white24, height: 16),
                     ],
-
                     ...infoLines.map(
                       (line) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 2.0),
@@ -396,9 +384,8 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
     }
   }
 
-  Widget _buildControls() {
+  Widget _buildControls(AppLocalizations l10n) {
     return DecoratedBox(
-      // Используем DecoratedBox для применения градиента
       decoration: const BoxDecoration(
         gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.transparent, Colors.black45, Colors.black87, Colors.black], stops: [0.0, 0.2, 0.7, 1.0]),
       ),
@@ -413,13 +400,13 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
               _showControls();
             },
           ),
-          _buildMiddleBar(),
+          _buildMiddleBar(l10n),
         ],
       ),
     );
   }
 
-  Widget _buildMiddleBar() {
+  Widget _buildMiddleBar(AppLocalizations l10n) {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -432,8 +419,8 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
           MaterialDesktopVolumeButton(),
           const Spacer(),
           _buildSettingsButton(),
-          _buildAudioTrackButton(),
-          _buildSubtitleTrackButton(),
+          _buildAudioTrackButton(l10n),
+          _buildSubtitleTrackButton(l10n),
           MaterialDesktopFullscreenButton(),
         ],
       ),
@@ -444,23 +431,22 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
     return MaterialDesktopCustomButton(
       onPressed: () {
         final player = widget.state.widget.controller.player;
-        // player.pause();
         Navigator.of(context).push(MaterialPageRoute(builder: (context) => VideoPlayerSettingsPage(player)));
       },
-      icon: Icon(Icons.settings, color: Colors.white),
+      icon: const Icon(Icons.settings, color: Colors.white),
       iconSize: 22,
     );
   }
 
-  Widget _buildAudioTrackButton() {
+  Widget _buildAudioTrackButton(AppLocalizations l10n) {
     return MaterialDesktopCustomButton(
       onPressed: _toggleAudioTracks,
-      icon: Icon(Icons.audiotrack, color: Colors.white),
+      icon: const Icon(Icons.audiotrack, color: Colors.white),
       iconSize: 22,
     );
   }
 
-  Widget _buildSubtitleTrackButton() {
+  Widget _buildSubtitleTrackButton(AppLocalizations l10n) {
     final currentSubtitle = widget.state.widget.controller.player.state.track.subtitle;
     return MaterialDesktopCustomButton(
       onPressed: _toggleSubtitleTracks,
@@ -469,26 +455,18 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
     );
   }
 
-  String _getChannels(int channelsCount) {
-    var ch = "";
-
-    if (channelsCount == 1) {
-      ch = "mono";
-    } else if (channelsCount == 2) {
-      ch = "stereo";
-    } else if (channelsCount > 0) {
-      ch = "${channelsCount - 1}.1";
-    }
-    return ch;
+  String _formatChannels(int count, AppLocalizations l10n) {
+    if (count <= 0) return '';
+    if (count == 1) return l10n.mono;
+    if (count == 2) return l10n.stereo;
+    return '${count - 1}.1';
   }
 
-  Widget _buildAudioTracksOverlay() {
+  Widget _buildAudioTracksOverlay(AppLocalizations l10n) {
     final audioTracks = widget.state.widget.controller.player.state.tracks.audio;
     final currentAudio = widget.state.widget.controller.player.state.track.audio;
 
-    if (audioTracks.isEmpty) {
-      return const SizedBox();
-    }
+    if (audioTracks.isEmpty) return const SizedBox();
 
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -507,7 +485,6 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Заголовок
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -515,11 +492,11 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.audiotrack, size: 16, color: Colors.white70),
+                    const Icon(Icons.audiotrack, size: 16, color: Colors.white70),
                     const SizedBox(width: 8),
                     Text(
-                      'Аудиодорожки',
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                      l10n.audioTracksTitle,
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -529,7 +506,7 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ...audioTracks.where((track) => track.id != 'auto' && track.id != 'no').map((track) {
+                      ...audioTracks.where((t) => t.id != 'auto' && t.id != 'no').map((track) {
                         final isSelected = track.id == currentAudio.id;
                         return Material(
                           color: Colors.transparent,
@@ -550,12 +527,12 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(track.title ?? 'Аудио ${track.id}', style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13)),
+                                        Text(track.title ?? l10n.unknownAudio(track.id), style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13)),
                                         Row(
                                           children: [
-                                            if (track.codec != null && track.codec!.isNotEmpty) ...[Text(track.codec!, style: TextStyle(color: Colors.white70, fontSize: 10)), SizedBox(width: 5)],
-
-                                            if (track.channelscount != null) Text(_getChannels(track.channelscount!), style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                            if (track.codec != null && track.codec!.isNotEmpty) Text(track.codec!, style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                                            if (track.codec != null && track.codec!.isNotEmpty && track.channelscount != null) const SizedBox(width: 5),
+                                            if (track.channelscount != null) Text(_formatChannels(track.channelscount!, l10n), style: const TextStyle(color: Colors.white70, fontSize: 10)),
                                           ],
                                         ),
                                       ],
@@ -565,7 +542,7 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4)),
-                                      child: Text(track.language!, style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                      child: Text(track.language!, style: const TextStyle(color: Colors.white70, fontSize: 10)),
                                     ),
                                 ],
                               ),
@@ -584,13 +561,11 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
     );
   }
 
-  Widget _buildSubtitleTracksOverlay() {
+  Widget _buildSubtitleTracksOverlay(AppLocalizations l10n) {
     final subtitleTracks = widget.state.widget.controller.player.state.tracks.subtitle;
     final currentSubtitle = widget.state.widget.controller.player.state.track.subtitle;
 
-    if (subtitleTracks.isEmpty) {
-      return const SizedBox();
-    }
+    if (subtitleTracks.isEmpty) return const SizedBox();
 
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -609,7 +584,6 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Заголовок
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -617,11 +591,11 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.subtitles, size: 16, color: Colors.white70),
+                    const Icon(Icons.subtitles, size: 16, color: Colors.white70),
                     const SizedBox(width: 8),
                     Text(
-                      'Субтитры',
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                      l10n.subtitlesTitle,
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -633,6 +607,12 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                     children: [
                       ...subtitleTracks.map((track) {
                         final isSelected = track.id == currentSubtitle.id;
+                        String displayText;
+                        if (track.id == 'no') {
+                          displayText = l10n.disableSubtitles;
+                        } else {
+                          displayText = track.title ?? l10n.unknownSubtitles(track.id);
+                        }
                         return Material(
                           color: Colors.transparent,
                           child: InkWell(
@@ -649,13 +629,13 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
                                   Icon(isSelected ? Icons.check_circle : Icons.radio_button_unchecked, size: 16, color: isSelected ? Colors.blue : Colors.white54),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(track.id == 'no' ? 'Отключить' : track.title ?? 'Субтитры ${track.id}', style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13)),
+                                    child: Text(displayText, style: TextStyle(color: isSelected ? Colors.blue : Colors.white, fontSize: 13)),
                                   ),
                                   if (track.language != null && track.language!.isNotEmpty && track.id != 'no')
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(4)),
-                                      child: Text(track.language!, style: TextStyle(color: Colors.white70, fontSize: 10)),
+                                      child: Text(track.language!, style: const TextStyle(color: Colors.white70, fontSize: 10)),
                                     ),
                                 ],
                               ),

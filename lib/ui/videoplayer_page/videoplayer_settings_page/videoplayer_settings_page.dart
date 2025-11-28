@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:torrstv/core/settings/videoplayer_settings.dart';
+import 'package:torrstv/l10n/app_localizations.dart';
 import 'package:torrstv/ui/videoplayer_page/audio_filter_utils.dart';
 import 'package:torrstv/ui/videoplayer_page/videoplayer_settings_page/widgets.dart';
 
@@ -19,11 +20,12 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final channels = _player?.state.track.audio.channelscount ?? 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Player Settings'), backgroundColor: colorScheme.surface, elevation: 0),
+      appBar: AppBar(title: Text(l10n.playerSettingsTitle), backgroundColor: colorScheme.surface, elevation: 0),
       body: Container(
         padding: const EdgeInsets.all(24),
         alignment: Alignment.topCenter,
@@ -31,10 +33,10 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
           constraints: const BoxConstraints(maxWidth: 800),
           child: ListView(
             children: [
-              const Text('Audio filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.audioFiltersSection, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const Divider(),
               BooleanSwitchSetting(
-                title: 'Enable audio filters (Включиьт адуио фильтры)',
+                title: l10n.enableAudioFilters,
                 getValue: (s) => s.isAudioFilters(),
                 setValue: (s, v) {
                   s.useAudioFilters(v);
@@ -43,11 +45,11 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              const Text('Панорамирование звука (Pan Volume)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.panVolumeSection, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const Divider(),
 
               PanSliderSetting(
-                title: 'Front Pan Volume (Передние колонки)',
+                title: l10n.frontPanVolume,
                 getValue: (s) => s.getFrontPan(),
                 setValue: (s, v) {
                   s.setFrontPan(v);
@@ -56,7 +58,7 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
               ),
 
               PanSliderSetting(
-                title: 'Center Pan Volume (Центральная колонка, голос)',
+                title: l10n.centerPanVolume,
                 getValue: (s) => s.getCenterPan(),
                 setValue: (s, v) {
                   s.setCenterPan(v);
@@ -65,7 +67,7 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
               ),
 
               PanSliderSetting(
-                title: 'Surround Pan Volume (Боковые колонки, 7.1 только)',
+                title: l10n.surroundPanVolume,
                 getValue: (s) => s.getMiddlePan(),
                 setValue: (s, v) {
                   s.setMiddlePan(v);
@@ -74,7 +76,7 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
               ),
 
               PanSliderSetting(
-                title: 'Rear Pan Volume (Задние колонки)',
+                title: l10n.rearPanVolume,
                 getValue: (s) => s.getRearPan(),
                 setValue: (s, v) {
                   s.setRearPan(v);
@@ -83,11 +85,11 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              const Text('Аудио-эффекты', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.audioEffectsSection, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const Divider(),
 
               BooleanSwitchSetting(
-                title: 'Normalize (Нормализация громкости)',
+                title: l10n.normalize,
                 getValue: (s) => s.getNormalize(),
                 setValue: (s, v) {
                   s.setNormalize(v);
@@ -96,7 +98,7 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
               ),
 
               BooleanSwitchSetting(
-                title: 'Smoothing (Сглаживание пиков)',
+                title: l10n.smoothing,
                 getValue: (s) => s.getSmoothing(),
                 setValue: (s, v) {
                   s.setSmoothing(v);
@@ -105,7 +107,7 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
               ),
 
               BooleanSwitchSetting(
-                title: 'Stereo to 5.1 (Разбить stereo на 5.1 каналы)',
+                title: l10n.stereoTo51,
                 getValue: (s) => s.getStereoTo51(),
                 setValue: (s, v) {
                   s.setStereoTo51(v);
@@ -114,7 +116,7 @@ class VideoPlayerSettingsPage extends ConsumerWidget {
               ),
 
               BooleanSwitchSetting(
-                title: '7.1 to 5.1 (Преобразовать 7.1 в 5.1 каналы)',
+                title: l10n.sevenOneTo51,
                 getValue: (s) => s.get71To51(),
                 setValue: (s, v) {
                   s.set71To51(v);

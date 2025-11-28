@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/utils/bytes.dart';
+import 'package:torrstv/l10n/app_localizations.dart';
 
 class TorrentCard extends ConsumerWidget {
   final dynamic torrent;
@@ -12,6 +13,7 @@ class TorrentCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
@@ -50,7 +52,7 @@ class TorrentCard extends ConsumerWidget {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(flex: 2, child: _buildHashInfo(colorScheme)),
+                                Expanded(flex: 2, child: _buildHashInfo(colorScheme, l10n)),
                                 Expanded(flex: 1, child: _buildSizeDateInfo(colorScheme)),
                               ],
                             ),
@@ -112,24 +114,31 @@ class TorrentCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildHashInfo(ColorScheme colorScheme) {
+  Widget _buildHashInfo(ColorScheme colorScheme, AppLocalizations l10n) {
     final hash = torrent['hash'];
     final stat = torrent['stat'];
-    var statStr = "";
+    String statStr = "";
+
     if (stat != null) {
       switch (stat) {
         case 0:
-          statStr = "Torrent added";
+          statStr = l10n.torrentStatusAdded;
+          break;
         case 1:
-          statStr = "Torrent getting info";
+          statStr = l10n.torrentStatusGettingInfo;
+          break;
         case 2:
-          statStr = "Torrent preload";
+          statStr = l10n.torrentStatusPreload;
+          break;
         case 3:
-          statStr = "Torrent working";
+          statStr = l10n.torrentStatusWorking;
+          break;
         case 4:
-          statStr = "Torrent closed";
+          statStr = l10n.torrentStatusClosed;
+          break;
         case 5:
-          statStr = "Torrent in db";
+          statStr = l10n.torrentStatusInDb;
+          break;
         default:
           statStr = "";
       }
@@ -159,7 +168,7 @@ class TorrentCard extends ConsumerWidget {
   Widget _buildSizeDateInfo(ColorScheme colorScheme) {
     final size = torrent['torrent_size'];
     final timestamp = torrent['timestamp'];
-    var date = "";
+    String date = "";
 
     if (timestamp != null && timestamp! > 0) {
       DateTime d = DateTime.fromMillisecondsSinceEpoch(timestamp! * 1000);

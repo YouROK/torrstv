@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/tmdb/tmdb.dart';
+import 'package:torrstv/l10n/localizations_mixin.dart';
 import 'package:torrstv/ui/main_navigation/tab_controller_provider.dart';
 import 'package:torrstv/ui/widgets/dpad_text_field.dart';
 
@@ -13,7 +14,7 @@ class AddPage extends ConsumerStatefulWidget {
   ConsumerState<AddPage> createState() => _AddPageState();
 }
 
-class _AddPageState extends ConsumerState<AddPage> {
+class _AddPageState extends ConsumerState<AddPage> with LocalizedState<AddPage> {
   final _magnetController = TextEditingController();
   final _titleController = TextEditingController();
   final _posterUrlController = TextEditingController();
@@ -24,13 +25,19 @@ class _AddPageState extends ConsumerState<AddPage> {
   bool _isSearchingPosters = false;
   bool _isSaving = false;
 
-  final List<String> _categories = ['Movies', 'Series', 'Music', 'Other'];
+  late List<String> _categories;
 
   @override
   void initState() {
     super.initState();
     _magnetController.addListener(_onMagnetChanged);
     _titleController.addListener(_onTitleChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _categories = [l10n.moviesCategory, l10n.seriesCategory, l10n.musicCategory, l10n.otherCategory];
   }
 
   Future<void> _pickTorrentFile() async {
@@ -109,7 +116,7 @@ class _AddPageState extends ConsumerState<AddPage> {
 
   Future<void> _saveTorrent() async {
     if (_magnetController.text.isEmpty && _selectedFilePath == null) {
-      _showError('Please enter a magnet link or select a torrent file');
+      _showError(l10n.enterMagnetOrFile);
       return;
     }
 
@@ -128,15 +135,15 @@ class _AddPageState extends ConsumerState<AddPage> {
       }
 
       if (success) {
-        _showSuccess('Torrent added successfully');
+        _showSuccess(l10n.torrentAddedSuccessfully);
         final tabController = ref.read(tabControllerProvider);
         tabController.animateTo(0);
       } else {
-        _showError('Error adding torrent');
+        _showError(l10n.errorAddingTorrent);
       }
     } catch (e) {
       print(e);
-      _showError('Error: $e');
+      _showError('${l10n.errorPrefix} $e');
     } finally {
       setState(() {
         _isSaving = false;
@@ -157,7 +164,7 @@ class _AddPageState extends ConsumerState<AddPage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Add'), backgroundColor: colorScheme.surface, elevation: 0),
+      appBar: AppBar(title: Text(l10n.add), backgroundColor: colorScheme.surface, elevation: 0),
       body: Container(
         padding: const EdgeInsets.all(24),
         alignment: Alignment.topCenter,
@@ -172,7 +179,7 @@ class _AddPageState extends ConsumerState<AddPage> {
                   keyboardType: TextInputType.url,
                   style: TextStyle(color: colorScheme.onSurface),
                   decoration: InputDecoration(
-                    labelText: 'Magnet:',
+                    labelText: l10n.magnetLabel,
                     hintText: 'magnet:?xt=urn:btih:...',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -189,7 +196,7 @@ class _AddPageState extends ConsumerState<AddPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        _selectedFilePath ?? 'No file selected',
+                        _selectedFilePath ?? l10n.noFileSelected,
                         style: TextStyle(
                           color: _selectedFilePath != null ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.5),
                           fontStyle: _selectedFilePath != null ? FontStyle.normal : FontStyle.italic,
@@ -199,9 +206,9 @@ class _AddPageState extends ConsumerState<AddPage> {
                     ),
                     const SizedBox(width: 8),
                     // Кнопка выбора файла
-                    IconButton(icon: const Icon(Icons.folder_open), onPressed: _isSaving ? null : _pickTorrentFile, tooltip: 'Select .torrent file'),
+                    IconButton(icon: const Icon(Icons.folder_open), onPressed: _isSaving ? null : _pickTorrentFile, tooltip: l10n.selectTorrentFile),
                     // Кнопка очистки
-                    if (_selectedFilePath != null) IconButton(icon: const Icon(Icons.clear), onPressed: _isSaving ? null : _clearSelectedFile, tooltip: 'Clear selected file'),
+                    if (_selectedFilePath != null) IconButton(icon: const Icon(Icons.clear), onPressed: _isSaving ? null : _clearSelectedFile, tooltip: l10n.clearSelectedFile),
                   ],
                 ),
 
@@ -211,7 +218,7 @@ class _AddPageState extends ConsumerState<AddPage> {
                   child: ElevatedButton.icon(
                     onPressed: _isSaving ? null : _saveTorrent,
                     icon: _isSaving ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save),
-                    label: _isSaving ? const Text('Saving...') : const Text('Add'),
+                    label: _isSaving ? Text(l10n.saving) : Text(l10n.add),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -236,18 +243,18 @@ class _AddPageState extends ConsumerState<AddPage> {
                         ),
                       ),
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         children: [
                           // Поле названия
                           DpadTextField(
                             controller: _titleController,
-                            keyboardType: TextInputType.url,
+                            keyboardType: TextInputType.text,
                             style: TextStyle(color: colorScheme.onSurface),
                             decoration: InputDecoration(
-                              labelText: 'Title of torrent',
-                              hintText: 'Enter a title',
+                              labelText: l10n.titleOfTorrent,
+                              hintText: l10n.enterATitle,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(color: colorScheme.primary),
@@ -266,7 +273,7 @@ class _AddPageState extends ConsumerState<AddPage> {
                             keyboardType: TextInputType.url,
                             style: TextStyle(color: colorScheme.onSurface),
                             decoration: InputDecoration(
-                              labelText: 'Poster URL',
+                              labelText: l10n.posterUrlLabel,
                               hintText: 'https://example.com/poster.jpg',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -286,12 +293,12 @@ class _AddPageState extends ConsumerState<AddPage> {
 
                 const SizedBox(height: 20),
 
-                // Выбор категории
                 DropdownButtonFormField<String>(
                   initialValue: _selectedCategory,
-                  decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
-                  items: _categories.map((category) {
-                    return DropdownMenuItem(value: category, child: Text(category));
+                  decoration: InputDecoration(labelText: l10n.categoryLabel, border: const OutlineInputBorder()),
+                  items: _categories.asMap().entries.map((entry) {
+                    final originalValues = ['Movies', 'Series', 'Music', 'Other'];
+                    return DropdownMenuItem(value: originalValues[entry.key], child: Text(entry.value));
                   }).toList(),
                   onChanged: (value) {
                     setState(() {
@@ -302,9 +309,8 @@ class _AddPageState extends ConsumerState<AddPage> {
 
                 const SizedBox(height: 20),
 
-                // Предложения постеров из TMDB
                 if (_titleController.text.isNotEmpty) ...[
-                  Text('Posters:', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l10n.postersLabel, style: Theme.of(context).textTheme.titleMedium),
 
                   if (_isSearchingPosters) const Center(child: CircularProgressIndicator()),
 

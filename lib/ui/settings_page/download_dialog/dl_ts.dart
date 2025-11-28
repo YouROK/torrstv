@@ -2,25 +2,33 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:torrstv/l10n/app_localizations.dart';
 
 import 'dl_ts_provider.dart';
 
 void startDownloadDialog(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context)!;
   showDialog(
     context: context,
     barrierDismissible: false,
     builder: (BuildContext context) {
-      return BackdropFilter(filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), child: const _DownloadProgressDialog());
+      return BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+        child: _DownloadProgressDialog(l10n: l10n),
+      );
     },
   );
-  ref.read(downloadStateProvider.notifier).startDownload();
+  ref.read(downloadStateProvider.notifier).startDownload(l10n);
 }
 
 class _DownloadProgressDialog extends ConsumerWidget {
-  const _DownloadProgressDialog();
+  final AppLocalizations l10n;
+
+  const _DownloadProgressDialog({required this.l10n});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final downloadState = ref.watch(downloadStateProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -32,7 +40,7 @@ class _DownloadProgressDialog extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
 
         title: Text(
-          'Download TorrServer',
+          l10n.downloadTorrServer,
           style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.bold),
         ),
 
@@ -40,11 +48,17 @@ class _DownloadProgressDialog extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LinearProgressIndicator(value: downloadState.progress, backgroundColor: colorScheme.onSurface.withOpacity(0.1), color: colorScheme.primary, minHeight: 8, borderRadius: BorderRadius.circular(4)),
+            LinearProgressIndicator(
+              value: downloadState.progress,
+              backgroundColor: colorScheme.onSurface.withOpacity(0.1),
+              color: colorScheme.primary,
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(4),
+            ),
             const SizedBox(height: 15),
 
             SelectableText(
-              downloadState.message,
+              downloadState.message, // ⚠️ см. ниже!
               textAlign: TextAlign.center,
               style: TextStyle(color: colorScheme.onSurface.withOpacity(0.9), fontSize: 14),
             ),
@@ -59,7 +73,7 @@ class _DownloadProgressDialog extends ConsumerWidget {
                 Navigator.of(context).pop();
               },
               child: Text(
-                'Отмена',
+                l10n.buttonCancel,
                 style: TextStyle(color: colorScheme.error, fontWeight: FontWeight.bold),
               ),
             )
@@ -69,7 +83,7 @@ class _DownloadProgressDialog extends ConsumerWidget {
                 Navigator.of(context).pop();
               },
               child: Text(
-                'Закрыть',
+                l10n.buttonClose,
                 style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.bold),
               ),
             ),

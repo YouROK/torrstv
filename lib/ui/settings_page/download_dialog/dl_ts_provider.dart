@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/services/torrserver/ts.dart';
 import 'package:torrstv/core/utils/bytes.dart';
+import 'package:torrstv/l10n/app_localizations.dart';
 
 const String _baseUrl = 'https://github.com/YouROK/TorrServer/releases/latest/download/';
 
@@ -77,9 +78,9 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
     return '$_baseUrl$fileName';
   }
 
-  Future<void> startDownload() async {
+  Future<void> startDownload(AppLocalizations l10n) async {
     if (!Platform.isLinux && !Platform.isMacOS && !Platform.isWindows) {
-      state = state.copyWith(message: 'Download only in desktop OS.', isDownloading: false);
+      state = state.copyWith(message: l10n.downloadErrorPlatform, isDownloading: false);
       return;
     }
 
@@ -87,11 +88,12 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
 
     final downloadUrl = _getTargetUrl();
     if (downloadUrl == null) {
-      state = state.copyWith(message: 'Error: unknown platform.', isDownloading: false);
+      state = state.copyWith(message: l10n.downloadErrorUnknownPlatform, isDownloading: false);
       return;
     }
 
-    state = state.copyWith(isDownloading: true, progress: 0.0, message: 'Download file from: ${downloadUrl.split('/').last}');
+    final filename = downloadUrl.split('/').last;
+    state = state.copyWith(isDownloading: true, progress: 0.0, message: l10n.downloadStarting(filename));
 
     try {
       final client = http.Client();
@@ -121,26 +123,26 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
         bytesReceived += bytes.length;
 
         final newProgress = bytesReceived / totalBytes;
-        state = state.copyWith(progress: newProgress, message: 'Downloaded: ${(newProgress * 100).toStringAsFixed(1)}%  ${bytesFmt(bytesReceived)} / ${bytesFmt(totalBytes)}');
+        state = state.copyWith(progress: newProgress, message: l10n.downloadProgress((newProgress * 100).toStringAsFixed(1), bytesFmt(bytesReceived), bytesFmt(totalBytes)));
       }
 
       await sink.close();
       client.close();
 
       if (Platform.isLinux || Platform.isMacOS) {
-        state = state.copyWith(message: 'Prepare file...');
+        state = state.copyWith(message: l10n.downloadPreparing);
         try {
           final result = await Process.run('chmod', ['+x', filePath]);
           if (result.exitCode != 0) {
             print('Error set perm to file (chmod): ${result.stderr}');
-            state = state.copyWith(message: 'Download complete. Error set exec permission.');
+            state = state.copyWith(message: l10n.downloadCompleteErrorPerm);
             return;
           }
           if (Platform.isMacOS) {
             final resultXattr = await Process.run('xattr', ['-r', '-d', 'com.apple.quarantine', filePath]);
             if (resultXattr.exitCode != 0) {
               print('Warning: Error removing quarantine attribute (xattr): ${resultXattr.stderr}');
-              state = state.copyWith(message: 'Download complete. Error remove quarantine attribute.');
+              state = state.copyWith(message: l10n.downloadCompleteErrorQuarantine);
               return;
             }
           }
@@ -149,16 +151,16 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
         }
       }
 
-      state = state.copyWith(isDownloading: false, progress: 1.0, message: 'Download complete: ${file.path}');
+      state = state.copyWith(isDownloading: false, progress: 1.0, message: l10n.downloadCompletePath(file.path));
 
       final tss = _ref.read(torrServerServiceProvider);
       tss.startTorrServer();
     } catch (e) {
-      state = state.copyWith(isDownloading: false, progress: 0.0, message: 'Error download: ${e.toString()}');
+      state = state.copyWith(isDownloading: false, progress: 0.0, message: l10n.downloadError(e.toString()));
     }
   }
 
   void cancelDownload() {
-    state = DownloadState(isDownloading: false, message: 'Download canceled.');
+    state = DownloadState(isDownloading: false, message: '');
   }
 }

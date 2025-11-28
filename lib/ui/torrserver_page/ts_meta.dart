@@ -1,35 +1,40 @@
-const Map<String, ({String label, String hint})> torrServerMetadata = {
-  // --- Числовые настройки (int) ---
-  'CacheSize': (label: 'Размер кэша', hint: 'Размер кэша в байтах (минимум 32МБ)'),
-  'ReaderReadAHead': (label: 'Упреждающее чтение', hint: 'Процент буфера упреждающего чтения'),
-  'PreloadCache': (label: 'Размер предзагрузки', hint: 'Размер кэша предзагрузки'),
-  'RetrackersMode': (label: 'Режим ретрекеров', hint: 'Режим работы с ретрекерами'),
-  'TorrentDisconnectTimeout': (label: 'Таймаут отключения торрента', hint: 'Таймаут в секундах'),
-  'DownloadRateLimit': (label: 'Лимит загрузки', hint: 'Ограничение скорости загрузки в КБ/с (0 - без лимита)'),
-  'UploadRateLimit': (label: 'Лимит отдачи', hint: 'Ограничение скорости отдачи в КБ/с (0 - без лимита)'),
-  'ConnectionsLimit': (label: 'Лимит соединений', hint: 'Максимальное количество соединений'),
-  'PeersListenPort': (label: 'Порт P2P', hint: 'Порт для прослушивания P2P соединений (0 - случайный)'),
-  'SslPort': (label: 'Порт SSL', hint: 'Порт для SSL-соединений'),
+// lib/ui/torrserver_page/torrserver_metadata_l10n.dart
+import 'package:torrstv/l10n/app_localizations.dart';
 
-  // --- Строковые настройки (String) ---
-  'TorrentsSavePath': (label: 'Путь хранения кэша', hint: 'Путь где будет сохранен кэш'),
-  'FriendlyName': (label: 'Имя DLNA', hint: 'Имя сервера для DLNA'),
-  'SslCert': (label: 'Сертификат SSL', hint: 'Путь к файлу сертификата'),
-  'SslKey': (label: 'Ключ SSL', hint: 'Путь к файлу ключа'),
+Map<String, ({String label, String hint})> getTorrServerMetadata(AppLocalizations l10n) {
+  return {
+    // --- Числовые настройки (int) ---
+    'CacheSize': (label: l10n.tsCacheSizeLabel, hint: l10n.tsCacheSizeHint),
+    'ReaderReadAHead': (label: l10n.tsReaderReadAheadLabel, hint: l10n.tsReaderReadAheadHint),
+    'PreloadCache': (label: l10n.tsPreloadCacheLabel, hint: l10n.tsPreloadCacheHint),
+    'RetrackersMode': (label: l10n.tsRetrackersModeLabel, hint: l10n.tsRetrackersModeHint),
+    'TorrentDisconnectTimeout': (label: l10n.tsTorrentDisconnectTimeoutLabel, hint: l10n.tsTorrentDisconnectTimeoutHint),
+    'DownloadRateLimit': (label: l10n.tsDownloadRateLimitLabel, hint: l10n.tsDownloadRateLimitHint),
+    'UploadRateLimit': (label: l10n.tsUploadRateLimitLabel, hint: l10n.tsUploadRateLimitHint),
+    'ConnectionsLimit': (label: l10n.tsConnectionsLimitLabel, hint: l10n.tsConnectionsLimitHint),
+    'PeersListenPort': (label: l10n.tsPeersListenPortLabel, hint: l10n.tsPeersListenPortHint),
+    'SslPort': (label: l10n.tsSslPortLabel, hint: l10n.tsSslPortHint),
 
-  // --- Булевы настройки (bool) ---
-  'UseDisk': (label: 'Использовать диск для кэша', hint: 'Записывать кэш на диск, медленный режим, но экономит память'),
-  'RemoveCacheOnDrop': (label: 'Удалять кэш при удалении торрента', hint: 'Удалять данные, когда торрент удален'),
-  'ForceEncrypt': (label: 'Принудительное шифрование', hint: 'Использовать шифрованные заголовки'),
-  'EnableDebug': (label: 'Включить дебаг-лог', hint: 'Записывать подробные логи'),
-  'EnableDLNA': (label: 'Включить DLNA', hint: 'Активировать DLNA-сервер'),
-  'EnableRutorSearch': (label: 'Включить поиск Rutor', hint: 'Активировать встроенный поиск'),
-  'EnableIPv6': (label: 'Включить IPv6', hint: 'Разрешить IPv6'),
-  'DisableTCP': (label: 'Отключить TCP', hint: 'Использовать только UTP'),
-  'DisableUTP': (label: 'Отключить UTP', hint: 'Использовать только TCP'),
-  'DisableUPNP': (label: 'Отключить UPnP', hint: 'Отключить автоматическую настройку портов'),
-  'DisableDHT': (label: 'Отключить DHT', hint: 'Отключить DHT'),
-  'DisablePEX': (label: 'Отключить PEX', hint: 'Отключить PEX'),
-  'DisableUpload': (label: 'Отключить отдачу', hint: 'Отключить возможность отдавать пирам'),
-  'ResponsiveMode': (label: 'Включить быстрый режим чтения', hint: 'Быстрый режим чтения торрента'),
-};
+    // --- Строковые настройки (String) ---
+    'TorrentsSavePath': (label: l10n.tsTorrentsSavePathLabel, hint: l10n.tsTorrentsSavePathHint),
+    'FriendlyName': (label: l10n.tsFriendlyNameLabel, hint: l10n.tsFriendlyNameHint),
+    'SslCert': (label: l10n.tsSslCertLabel, hint: l10n.tsSslCertHint),
+    'SslKey': (label: l10n.tsSslKeyLabel, hint: l10n.tsSslKeyHint),
+
+    // --- Булевы настройки (bool) ---
+    'UseDisk': (label: l10n.tsUseDiskLabel, hint: l10n.tsUseDiskHint),
+    'RemoveCacheOnDrop': (label: l10n.tsRemoveCacheOnDropLabel, hint: l10n.tsRemoveCacheOnDropHint),
+    'ForceEncrypt': (label: l10n.tsForceEncryptLabel, hint: l10n.tsForceEncryptHint),
+    'EnableDebug': (label: l10n.tsEnableDebugLabel, hint: l10n.tsEnableDebugHint),
+    'EnableDLNA': (label: l10n.tsEnableDLNALabel, hint: l10n.tsEnableDLNAHint),
+    'EnableRutorSearch': (label: l10n.tsEnableRutorSearchLabel, hint: l10n.tsEnableRutorSearchHint),
+    'EnableIPv6': (label: l10n.tsEnableIPv6Label, hint: l10n.tsEnableIPv6Hint),
+    'DisableTCP': (label: l10n.tsDisableTCPLabel, hint: l10n.tsDisableTCPHint),
+    'DisableUTP': (label: l10n.tsDisableUTPLabel, hint: l10n.tsDisableUTPHint),
+    'DisableUPNP': (label: l10n.tsDisableUPNPLabel, hint: l10n.tsDisableUPNPHint),
+    'DisableDHT': (label: l10n.tsDisableDHTLabel, hint: l10n.tsDisableDHTHint),
+    'DisablePEX': (label: l10n.tsDisablePEXLabel, hint: l10n.tsDisablePEXHint),
+    'DisableUpload': (label: l10n.tsDisableUploadLabel, hint: l10n.tsDisableUploadHint),
+    'ResponsiveMode': (label: l10n.tsResponsiveModeLabel, hint: l10n.tsResponsiveModeHint),
+  };
+}
