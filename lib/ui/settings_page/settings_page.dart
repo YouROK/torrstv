@@ -8,6 +8,7 @@ import 'package:torrstv/core/services/torrserver/ts.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/core/utils/platform_utils.dart';
 import 'package:torrstv/l10n/app_localizations.dart';
+import 'package:torrstv/l10n/locale_provider.dart';
 import 'package:torrstv/ui/settings_page/download_dialog/dl_ts.dart';
 import 'package:torrstv/ui/widgets/dpad_text_field.dart';
 
@@ -62,9 +63,41 @@ class SettingsPage extends ConsumerWidget {
     final isOuterPlayerEnabledNotifier = ref.read(_isOuterPlayerEnabledLocalProvider.notifier);
     final isSearchSaveEnabledNotifier = ref.read(_isSearchSaveProvider.notifier);
 
+    final currentLocale = ref.watch(localeProvider);
+    String currentLanguageCode = '';
+    currentLocale.when(
+      data: (locale) {
+        currentLanguageCode = locale.languageCode;
+      },
+      loading: () {},
+      error: (err, stack) {},
+    );
+
     final colorScheme = Theme.of(context).colorScheme;
 
     final showDownloadButton = isShowDownloadTS();
+
+    String getCurrentDropdownValue() {
+      final currentLocale = ref.watch(localeProvider);
+
+      return currentLocale.maybeWhen(
+        data: (locale) {
+          final code = locale.languageCode;
+          if (code == 'en' || code == 'ru') return code;
+          return 'system';
+        },
+        orElse: () => 'system',
+      );
+    }
+
+    void onLanguageChanged(String? value) {
+      if (value == null) return;
+
+      final localeNotifier = ref.read(localeProvider.notifier);
+      localeNotifier.setLocale(value);
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.languageChanged)));
+    }
 
     void pickFile() async {
       FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: false);
@@ -167,7 +200,7 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
 
-              // Сохранять настройки
+              // Сохранять настройки поиска
               const SizedBox(height: 40),
               SwitchListTile(
                 title: Text(l10n.rememberSearchParams),
@@ -177,6 +210,7 @@ class SettingsPage extends ConsumerWidget {
                 value: isSearchSaveEnabled,
               ),
 
+              // Кнопка сохранить
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: () {
@@ -195,6 +229,31 @@ class SettingsPage extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+              ),
+
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+
+              // Выбор языка
+              DropdownButtonFormField<String>(
+                value: getCurrentDropdownValue(),
+                decoration: InputDecoration(
+                  labelText: l10n.language,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: colorScheme.primary),
+                  ),
+                  filled: true,
+                  fillColor: colorScheme.surface.withOpacity(0.5),
+                  labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+                ),
+                items: [
+                  DropdownMenuItem(value: 'system', child: Text(l10n.systemLanguage)),
+                  DropdownMenuItem(value: 'en', child: Text(l10n.english)),
+                  DropdownMenuItem(value: 'ru', child: Text(l10n.russian)),
+                ],
+                onChanged: onLanguageChanged,
               ),
 
               const SizedBox(height: 16),
