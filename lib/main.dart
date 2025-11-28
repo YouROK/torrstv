@@ -42,8 +42,15 @@ class MyApp extends ConsumerWidget {
         title: 'TorrsTV',
         theme: AppThemes.darkTheme,
         routerConfig: goRouter,
+        locale: locale,
         localizationsDelegates: [AppLocalizations.delegate, GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
-        supportedLocales: [Locale('en', ''), Locale('ru', '')],
+        supportedLocales: [const Locale('en', ''), const Locale('ru', ''), const Locale('system', '')],
+        localeResolutionCallback: (deviceLocale, supportedLocales) {
+          if (locale.languageCode == 'system') {
+            return deviceLocale ?? supportedLocales.first;
+          }
+          return supportedLocales.firstWhere((l) => l.languageCode == locale.languageCode, orElse: () => supportedLocales.first);
+        },
       ),
       loading: () => const CircularProgressIndicator(),
       error: (err, stack) => const Text('Locale error'),
