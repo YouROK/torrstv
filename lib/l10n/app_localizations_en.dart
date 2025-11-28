@@ -569,4 +569,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String buffering(Object percentage) {
     return 'Buffering: $percentage%';
   }
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get systemLanguage => 'System';
+
+  @override
+  String get english => 'English';
+
+  @override
+  String get russian => 'Russian';
+
+  @override
+  String get languageChanged => 'Language changed successfully';
 }

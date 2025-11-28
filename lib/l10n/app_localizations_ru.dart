@@ -569,4 +569,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String buffering(Object percentage) {
     return 'Буферизация: $percentage%';
   }
+
+  @override
+  String get language => 'Язык';
+
+  @override
+  String get systemLanguage => 'Системный';
+
+  @override
+  String get english => 'Английский';
+
+  @override
+  String get russian => 'Русский';
+
+  @override
+  String get languageChanged => 'Язык успешно изменен';
 }

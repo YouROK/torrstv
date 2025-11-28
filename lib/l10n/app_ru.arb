@@ -176,5 +176,10 @@
   "unknownSubtitles": "Субтитры {id}",
   "mono": "моно",
   "stereo": "стерео",
-  "buffering": "Буферизация: {percentage}%"
+  "buffering": "Буферизация: {percentage}%",
+  "language": "Язык",
+  "systemLanguage": "Системный",
+  "english": "Английский",
+  "russian": "Русский",
+  "languageChanged": "Язык успешно изменен"
 }

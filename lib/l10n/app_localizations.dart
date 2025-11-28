@@ -1162,6 +1162,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Buffering: {percentage}%'**
   String buffering(Object percentage);
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @systemLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get systemLanguage;
+
+  /// No description provided for @english.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
+  /// No description provided for @russian.
+  ///
+  /// In en, this message translates to:
+  /// **'Russian'**
+  String get russian;
+
+  /// No description provided for @languageChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Language changed successfully'**
+  String get languageChanged;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -176,5 +176,10 @@
   "unknownSubtitles": "Subtitles {id}",
   "mono": "mono",
   "stereo": "stereo",
-  "buffering": "Buffering: {percentage}%"
+  "buffering": "Buffering: {percentage}%",
+  "language": "Language",
+  "systemLanguage": "System",
+  "english": "English",
+  "russian": "Russian",
+  "languageChanged": "Language changed successfully"
 }
