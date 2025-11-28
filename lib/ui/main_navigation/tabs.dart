@@ -25,7 +25,7 @@ class TabsConfiguration {
 
   static List<Tab> get tabWidgets => items.map((item) => Tab(text: item.label, height: 50)).toList();
 
-  static List<Widget> get pageWidgets => items.map((item) => FocusTraversalGroup(child: item.page)).toList();
+  static List<Widget> get pageWidgets => items.map((item) => item.page).toList();
 
   static int get length => items.length;
 }

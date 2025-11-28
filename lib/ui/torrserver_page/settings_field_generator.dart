@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/ui/torrserver_page/ts_settings_provider.dart';
+import 'package:torrstv/ui/widgets/dpad_form_text_field.dart';
 
 class SettingsFieldGenerator extends ConsumerWidget {
   final String settingKey;
@@ -21,7 +22,7 @@ class SettingsFieldGenerator extends ConsumerWidget {
     } else if (value is int) {
       return ListTile(
         title: Text(label),
-        subtitle: TextFormField(
+        subtitle: DpadFormTextField(
           initialValue: value.toString(),
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -37,7 +38,7 @@ class SettingsFieldGenerator extends ConsumerWidget {
     } else if (value is String) {
       return ListTile(
         title: Text(label),
-        subtitle: TextFormField(
+        subtitle: DpadFormTextField(
           initialValue: value,
           decoration: InputDecoration(hintText: hint, isDense: true),
           onFieldSubmitted: (text) {

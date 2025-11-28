@@ -69,7 +69,7 @@ class SearchUINotifier extends StateNotifier<SearchUIState> {
     state = state.copyWith(isLoading: true, searchQuery: query, allTorrents: [], filteredTorrents: [], error: '');
     try {
       var link = "http://torrs.ru/search?query=$query";
-      final resp = await httpGetCache(link);
+      final resp = await httpGet(link, '');
       final List<dynamic> torrentList = json.decode(resp.data ?? '[]');
       state = state.copyWith(allTorrents: torrentList, isLoading: false);
       _updateFiltersAndSort();

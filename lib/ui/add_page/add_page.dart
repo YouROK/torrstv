@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:torrstv/core/services/torrserver/api.dart';
 import 'package:torrstv/core/tmdb/tmdb.dart';
 import 'package:torrstv/ui/main_navigation/tab_controller_provider.dart';
+import 'package:torrstv/ui/widgets/dpad_text_field.dart';
 
 class AddPage extends ConsumerStatefulWidget {
   const AddPage({super.key});
@@ -166,7 +167,7 @@ class _AddPageState extends ConsumerState<AddPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
+                DpadTextField(
                   controller: _magnetController,
                   keyboardType: TextInputType.url,
                   style: TextStyle(color: colorScheme.onSurface),
@@ -240,7 +241,7 @@ class _AddPageState extends ConsumerState<AddPage> {
                       child: Column(
                         children: [
                           // Поле названия
-                          TextField(
+                          DpadTextField(
                             controller: _titleController,
                             keyboardType: TextInputType.url,
                             style: TextStyle(color: colorScheme.onSurface),
@@ -260,7 +261,7 @@ class _AddPageState extends ConsumerState<AddPage> {
                           const SizedBox(height: 16),
 
                           // Поле URL постера
-                          TextField(
+                          DpadTextField(
                             controller: _posterUrlController,
                             keyboardType: TextInputType.url,
                             style: TextStyle(color: colorScheme.onSurface),

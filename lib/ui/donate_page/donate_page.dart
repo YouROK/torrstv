@@ -35,7 +35,6 @@ class DonatePage extends ConsumerWidget {
                 const SizedBox(height: 40),
 
                 ElevatedButton.icon(
-                  autofocus: true,
                   onPressed: () {
                     launchUrlString("https://boosty.to/yourok");
                   },

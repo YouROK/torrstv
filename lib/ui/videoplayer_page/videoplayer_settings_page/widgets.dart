@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/core/settings/videoplayer_settings.dart';
+import 'package:torrstv/ui/widgets/dpad_text_field.dart';
 
 class PanSliderSetting extends ConsumerWidget {
   final String title;
@@ -61,7 +62,7 @@ class PanSliderSetting extends ConsumerWidget {
               const SizedBox(width: 16),
               SizedBox(
                 width: 80,
-                child: TextField(
+                child: DpadTextField(
                   controller: textController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   textAlign: TextAlign.center,

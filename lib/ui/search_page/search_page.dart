@@ -5,6 +5,7 @@ import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/ui/main_navigation/tab_controller_provider.dart';
 import 'package:torrstv/ui/search_page/search_card.dart';
 import 'package:torrstv/ui/search_page/search_provider.dart';
+import 'package:torrstv/ui/widgets/dpad_text_field.dart';
 
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
@@ -93,7 +94,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     final List<Widget> staticHeaderWidgets = [
       const SizedBox(height: 5),
       // Поле ввода
-      TextField(
+      DpadTextField(
         controller: _textController,
         style: TextStyle(color: colorScheme.onSurface),
         decoration: InputDecoration(

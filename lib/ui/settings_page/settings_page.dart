@@ -8,6 +8,7 @@ import 'package:torrstv/core/services/torrserver/ts.dart';
 import 'package:torrstv/core/settings/settings_providers.dart';
 import 'package:torrstv/core/utils/platform_utils.dart';
 import 'package:torrstv/ui/settings_page/download_dialog/dl_ts.dart';
+import 'package:torrstv/ui/widgets/dpad_text_field.dart';
 
 final _hostControllerProvider = Provider.autoDispose<TextEditingController>((ref) {
   final currentHost = ref.watch(settingsProvider.select((s) => s.getTSHost()));
@@ -86,7 +87,7 @@ class SettingsPage extends ConsumerWidget {
             children: [
               //Адрес ТС
               const SizedBox(height: 20),
-              TextField(
+              DpadTextField(
                 controller: hostController,
                 keyboardType: TextInputType.url,
                 style: TextStyle(color: colorScheme.onSurface),
@@ -105,7 +106,7 @@ class SettingsPage extends ConsumerWidget {
 
               //Аутентификация
               const SizedBox(height: 20),
-              TextField(
+              DpadTextField(
                 controller: authController,
                 keyboardType: TextInputType.url,
                 style: TextStyle(color: colorScheme.onSurface),
@@ -138,7 +139,7 @@ class SettingsPage extends ConsumerWidget {
                   ),
                   SizedBox(width: 5),
                   Expanded(
-                    child: TextField(
+                    child: DpadTextField(
                       controller: playerController,
                       keyboardType: TextInputType.url,
                       style: TextStyle(color: colorScheme.onSurface),
