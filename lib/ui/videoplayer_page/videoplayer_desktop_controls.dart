@@ -25,16 +25,35 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
   bool _showPlayPauseAnimation = false;
   Timer? _animationTimer;
 
+  StreamSubscription<bool>? _playingSubscription;
+  StreamSubscription<Duration>? _bufferSubscription;
+
   @override
   void initState() {
     super.initState();
     _showControls();
+
+    _playingSubscription = widget.state.widget.controller.player.stream.playing.listen((playing) {
+      if (mounted) {
+        if (playing) {
+          _hideControls();
+        } else {
+          _showControls();
+        }
+      }
+    });
+
+    _bufferSubscription = widget.state.widget.controller.player.stream.buffer.listen((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
     _animationTimer?.cancel();
+    _playingSubscription?.cancel();
+    _bufferSubscription?.cancel();
     super.dispose();
   }
 
@@ -45,8 +64,9 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
     });
 
     _timer?.cancel();
+
     if (widget.state.widget.controller.player.state.playing) {
-      _timer = Timer(const Duration(seconds: 5), () {
+      _timer = Timer(const Duration(seconds: 3), () {
         if (mounted) {
           setState(() {
             _visible = false;
@@ -59,14 +79,18 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
   }
 
   void _hideControls() {
+    _timer?.cancel();
     if (widget.state.widget.controller.player.state.playing) {
-      setState(() {
-        _visible = false;
-        _showAudioTracks = false;
-        _showSubtitleTracks = false;
+      _timer = Timer(const Duration(seconds: 1), () {
+        if (mounted) {
+          setState(() {
+            _visible = false;
+            _showAudioTracks = false;
+            _showSubtitleTracks = false;
+          });
+        }
       });
     }
-    _timer?.cancel();
   }
 
   void _onHover() {
@@ -139,12 +163,6 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
       if (mounted) {
         setState(() {
           _showPlayPauseAnimation = false;
-          final isPlaying = widget.state.widget.controller.player.state.playing;
-          if (isPlaying) {
-            _hideControls();
-          } else {
-            _showControls();
-          }
         });
       }
     });
@@ -211,7 +229,10 @@ class _VideoPlayerDesktopControlsState extends ConsumerState<VideoPlayerDesktopC
       if (explicitTrack != null) return explicitTrack;
     }
 
-    return videoTracks.cast<VideoTrack?>().firstWhere((track) => track?.id != 'auto' && track?.id != 'no' && !(track?.image ?? false) && (track?.codec != null || track?.w != null), orElse: () => null);
+    return videoTracks.cast<VideoTrack?>().firstWhere(
+      (track) => track?.id != 'auto' && track?.id != 'no' && !(track?.image ?? false) && (track?.codec != null || track?.w != null),
+      orElse: () => null,
+    );
   }
 
   Widget _buildCenterInfoOverlay() {
